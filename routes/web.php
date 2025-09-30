@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\BusinessLoginController;
 use App\Http\Controllers\Auth\BusinessRegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\NewsController;
 
 // Home route
 Route::get('/', function () {
@@ -32,6 +33,22 @@ Route::post('/business/register', [BusinessRegisterController::class, 'register'
 // Public business routes
 Route::get('/biznisi', [BusinessController::class, 'index'])->name('businesses.index');
 Route::get('/biznisi/{business}', [BusinessController::class, 'show'])->name('businesses.show');
+
+// Public news routes
+Route::get('/vesti', [NewsController::class, 'index'])->name('news.index');
+
+// News routes for regular users (protected)
+Route::middleware('auth')->group(function () {
+    Route::get('/vesti/create', [NewsController::class, 'create'])->name('news.create');
+    Route::post('/vesti', [NewsController::class, 'store'])->name('news.store');
+    Route::get('/vesti/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
+    Route::put('/vesti/{news}', [NewsController::class, 'update'])->name('news.update');
+    Route::delete('/vesti/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
+    Route::post('/vesti/{news}/like', [NewsController::class, 'like'])->name('news.like');
+});
+
+// Public news show route (must be after create route)
+Route::get('/vesti/{news}', [NewsController::class, 'show'])->name('news.show');
 
 // Dashboard (protected routes)
 Route::middleware('auth')->group(function () {

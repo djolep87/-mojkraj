@@ -9,6 +9,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        return view('dashboard');
+        $user = Auth::user();
+        $news = $user->news()->orderBy('created_at', 'desc')->paginate(5);
+        
+        return view('dashboard', compact('news'));
     }
 }
