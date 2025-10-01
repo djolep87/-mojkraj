@@ -11,18 +11,43 @@ class BusinessController extends Controller
 {
     public function index()
     {
+        // Check if user is logged in
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli biznise.');
+        }
+        
+        $user = Auth::user();
+        
+        // Filter businesses by user's location (neighborhood and city)
         $businesses = Business::with('businessUser')
+            ->whereHas('businessUser', function($query) use ($user) {
+                $query->where('neighborhood', $user->neighborhood)
+                      ->where('city', $user->city);
+            })
             ->active()
             ->valid()
             ->orderBy('is_featured', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
-        return view('businesses.index', compact('businesses'));
+        return view('businesses.index', compact('businesses', 'user'));
     }
 
     public function show(Business $business)
     {
+        // Check if user is logged in
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli biznise.');
+        }
+        
+        $user = Auth::user();
+        $businessUser = $business->businessUser;
+        
+        // Check if business is from same neighborhood and city
+        if ($user->neighborhood !== $businessUser->neighborhood || $user->city !== $businessUser->city) {
+            abort(403, 'Nemate dozvolu da vidite ovaj biznis. Biznis je iz drugog dela grada.');
+        }
+        
         $business->increment('views');
         
         return view('businesses.show', compact('business'));
@@ -31,9 +56,10 @@ class BusinessController extends Controller
     public function dashboard()
     {
         $businessUser = Auth::guard('business')->user();
-        $businesses = $businessUser->businesses()->orderBy('created_at', 'desc')->paginate(10);
+        $businesses = $businessUser->businesses()->orderBy('created_at', 'desc')->paginate(5);
+        $offers = $businessUser->offers()->orderBy('created_at', 'desc')->paginate(5);
         
-        return view('business.dashboard', compact('businesses'));
+        return view('business.dashboard', compact('businesses', 'offers'));
     }
 
     public function create()

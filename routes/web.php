@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\BusinessRegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\OfferController;
 
 // Home route
 Route::get('/', function () {
@@ -37,6 +38,9 @@ Route::get('/biznisi/{business}', [BusinessController::class, 'show'])->name('bu
 // Public news routes
 Route::get('/vesti', [NewsController::class, 'index'])->name('news.index');
 
+// Public offers routes
+Route::get('/ponude', [OfferController::class, 'index'])->name('offers.index');
+
 // News routes for regular users (protected)
 Route::middleware('auth')->group(function () {
     Route::get('/vesti/create', [NewsController::class, 'create'])->name('news.create');
@@ -49,6 +53,9 @@ Route::middleware('auth')->group(function () {
 
 // Public news show route (must be after create route)
 Route::get('/vesti/{news}', [NewsController::class, 'show'])->name('news.show');
+
+// Public offers show route
+Route::get('/ponude/{offer}', [OfferController::class, 'show'])->name('offers.show');
 
 // Dashboard (protected routes)
 Route::middleware('auth')->group(function () {
@@ -63,4 +70,12 @@ Route::middleware('auth:business')->group(function () {
     Route::get('/business/biznisi/{business}/edit', [BusinessController::class, 'edit'])->name('businesses.edit');
     Route::put('/business/biznisi/{business}', [BusinessController::class, 'update'])->name('businesses.update');
     Route::delete('/business/biznisi/{business}', [BusinessController::class, 'destroy'])->name('businesses.destroy');
+    
+    // Offers routes for business users
+    Route::get('/business/ponude/create', [OfferController::class, 'create'])->name('offers.create');
+    Route::post('/business/ponude', [OfferController::class, 'store'])->name('offers.store');
+    Route::get('/business/ponude/{offer}/edit', [OfferController::class, 'edit'])->name('offers.edit');
+    Route::put('/business/ponude/{offer}', [OfferController::class, 'update'])->name('offers.update');
+    Route::delete('/business/ponude/{offer}', [OfferController::class, 'destroy'])->name('offers.destroy');
+    Route::post('/ponude/{offer}/like', [OfferController::class, 'like'])->name('offers.like');
 });

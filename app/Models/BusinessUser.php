@@ -50,4 +50,9 @@ class BusinessUser extends Authenticatable
     {
         return $this->hasMany(Business::class);
     }
+
+    public function offers()
+    {
+        return $this->hasMany(Offer::class);
+    }
 }

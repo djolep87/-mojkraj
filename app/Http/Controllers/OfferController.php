@@ -1,0 +1,196 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Offer;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
+class OfferController extends Controller
+{
+    use AuthorizesRequests;
+
+    public function index()
+    {
+        // Check if user is logged in
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli ponude.');
+        }
+        
+        $user = Auth::user();
+        
+        // Filter offers by user's location (neighborhood and city)
+        $offers = Offer::with('businessUser')
+            ->whereHas('businessUser', function($query) use ($user) {
+                $query->where('neighborhood', $user->neighborhood)
+                      ->where('city', $user->city);
+            })
+            ->active()
+            ->valid()
+            ->orderBy('is_featured', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        return view('offers.index', compact('offers', 'user'));
+    }
+
+    public function show(Offer $offer)
+    {
+        // Check if user is logged in
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli ponude.');
+        }
+        
+        $user = Auth::user();
+        $businessUser = $offer->businessUser;
+        
+        // Check if offer is from same neighborhood and city
+        if ($user->neighborhood !== $businessUser->neighborhood || $user->city !== $businessUser->city) {
+            abort(403, 'Nemate dozvolu da vidite ovu ponudu. Ponuda je iz drugog dela grada.');
+        }
+        
+        $offer->incrementViews();
+        
+        return view('offers.show', compact('offer'));
+    }
+
+    public function create()
+    {
+        return view('offers.create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:2000'],
+            'offer_type' => ['required', 'string', 'in:dnevna_ponuda,specijalna_ponuda,akcija,popust,ostalo'],
+            'original_price' => ['nullable', 'numeric', 'min:0'],
+            'discount_price' => ['nullable', 'numeric', 'min:0'],
+            'discount_percentage' => ['nullable', 'string', 'max:10'],
+            'valid_from' => ['nullable', 'date'],
+            'valid_until' => ['nullable', 'date', 'after_or_equal:valid_from'],
+            'valid_time_from' => ['nullable', 'date_format:H:i'],
+            'valid_time_until' => ['nullable', 'date_format:H:i', 'after:valid_time_from'],
+            'category' => ['required', 'string', 'in:hrana,usluge,proizvodi,opšte,ostalo'],
+            'images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+        ]);
+
+        $businessUser = Auth::guard('business')->user();
+        
+        $images = [];
+        if ($request->hasFile('images')) {
+            // Ensure images directory exists
+            Storage::disk('public')->makeDirectory('offers/images');
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('offers/images', 'public');
+                $images[] = $path;
+            }
+        }
+
+        $offer = $businessUser->offers()->create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'offer_type' => $request->offer_type,
+            'original_price' => $request->original_price,
+            'discount_price' => $request->discount_price,
+            'discount_percentage' => $request->discount_percentage,
+            'valid_from' => $request->valid_from,
+            'valid_until' => $request->valid_until,
+            'valid_time_from' => $request->valid_time_from,
+            'valid_time_until' => $request->valid_time_until,
+            'category' => $request->category,
+            'images' => $images,
+        ]);
+
+        return redirect()->route('business.dashboard')->with('success', 'Ponuda je uspešno kreirana!');
+    }
+
+    public function edit(Offer $offer)
+    {
+        $this->authorize('update', $offer);
+        
+        return view('offers.edit', compact('offer'));
+    }
+
+    public function update(Request $request, Offer $offer)
+    {
+        $this->authorize('update', $offer);
+
+        $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:2000'],
+            'offer_type' => ['required', 'string', 'in:dnevna_ponuda,specijalna_ponuda,akcija,popust,ostalo'],
+            'original_price' => ['nullable', 'numeric', 'min:0'],
+            'discount_price' => ['nullable', 'numeric', 'min:0'],
+            'discount_percentage' => ['nullable', 'string', 'max:10'],
+            'valid_from' => ['nullable', 'date'],
+            'valid_until' => ['nullable', 'date', 'after_or_equal:valid_from'],
+            'valid_time_from' => ['nullable', 'date_format:H:i'],
+            'valid_time_until' => ['nullable', 'date_format:H:i', 'after:valid_time_from'],
+            'category' => ['required', 'string', 'in:hrana,usluge,proizvodi,opšte,ostalo'],
+            'images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'is_active' => ['boolean'],
+        ]);
+
+        $images = $offer->images ?? [];
+        if ($request->hasFile('images')) {
+            // Delete old images
+            foreach ($images as $image) {
+                Storage::disk('public')->delete($image);
+            }
+            
+            // Ensure images directory exists
+            Storage::disk('public')->makeDirectory('offers/images');
+            
+            // Upload new images
+            $images = [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('offers/images', 'public');
+                $images[] = $path;
+            }
+        }
+
+        $offer->update([
+            'title' => $request->title,
+            'description' => $request->description,
+            'offer_type' => $request->offer_type,
+            'original_price' => $request->original_price,
+            'discount_price' => $request->discount_price,
+            'discount_percentage' => $request->discount_percentage,
+            'valid_from' => $request->valid_from,
+            'valid_until' => $request->valid_until,
+            'valid_time_from' => $request->valid_time_from,
+            'valid_time_until' => $request->valid_time_until,
+            'category' => $request->category,
+            'images' => $images,
+            'is_active' => $request->has('is_active'),
+        ]);
+
+        return redirect()->route('business.dashboard')->with('success', 'Ponuda je uspešno ažurirana!');
+    }
+
+    public function destroy(Offer $offer)
+    {
+        $this->authorize('delete', $offer);
+        
+        // Delete associated files
+        if ($offer->images) {
+            foreach ($offer->images as $image) {
+                Storage::disk('public')->delete($image);
+            }
+        }
+        
+        $offer->delete();
+
+        return redirect()->route('business.dashboard')->with('success', 'Ponuda je uspešno obrisana!');
+    }
+
+    public function like(Offer $offer)
+    {
+        $offer->incrementLikes();
+        return back();
+    }
+}

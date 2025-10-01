@@ -1,179 +1,143 @@
-<!DOCTYPE html>
-<html lang="sr">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Uredi vest - Moj Kraj</title>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700" rel="stylesheet" />
-    
-    <!-- Styles / Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-gray-50 font-sans">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="{{ route('home') }}" class="text-2xl font-bold text-blue-600">Moj Kraj</a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ route('news.show', $news) }}" class="text-gray-500 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                        Nazad na vest
-                    </a>
-                    <a href="{{ route('dashboard') }}" class="text-gray-700 text-sm hover:text-blue-600">Dobrodošao, {{ $currentUser->name }}!</a>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                            Odjavi se
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </nav>
+@extends('layouts.user')
 
-    <!-- Main Content -->
-    <div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="px-4 py-6 sm:px-0">
-            <!-- Header -->
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Uredi vest</h1>
-                <p class="mt-2 text-gray-600">Ažurirajte informacije o vašoj vesti</p>
-            </div>
+@section('title', 'Uredi vest - Moj Kraj')
 
-            <!-- Form -->
-            <div class="bg-white shadow rounded-lg">
-                <form method="POST" action="{{ route('news.update', $news) }}" enctype="multipart/form-data" class="p-6 space-y-6">
-                    @csrf
-                    @method('PUT')
-                    
-                    @if ($errors->any())
-                        <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-                            <ul class="list-disc list-inside space-y-1">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-
-                    <!-- Title -->
-                    <div>
-                        <label for="title" class="block text-sm font-medium text-gray-700">Naslov vesti</label>
-                        <input id="title" name="title" type="text" required 
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                               value="{{ old('title', $news->title) }}">
-                    </div>
-
-                    <!-- Category -->
-                    <div>
-                        <label for="category" class="block text-sm font-medium text-gray-700">Kategorija</label>
-                        <select id="category" name="category" required 
-                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Izaberite kategoriju</option>
-                            <option value="opšte" {{ old('category', $news->category) == 'opšte' ? 'selected' : '' }}>Opšte</option>
-                            <option value="dešavanja" {{ old('category', $news->category) == 'dešavanja' ? 'selected' : '' }}>Dešavanja</option>
-                            <option value="bezbednost" {{ old('category', $news->category) == 'bezbednost' ? 'selected' : '' }}>Bezbednost</option>
-                            <option value="zdravstvo" {{ old('category', $news->category) == 'zdravstvo' ? 'selected' : '' }}>Zdravstvo</option>
-                            <option value="sport" {{ old('category', $news->category) == 'sport' ? 'selected' : '' }}>Sport</option>
-                            <option value="kultura" {{ old('category', $news->category) == 'kultura' ? 'selected' : '' }}>Kultura</option>
-                            <option value="ostalo" {{ old('category', $news->category) == 'ostalo' ? 'selected' : '' }}>Ostalo</option>
-                        </select>
-                    </div>
-
-                    <!-- Summary -->
-                    <div>
-                        <label for="summary" class="block text-sm font-medium text-gray-700">Kratak sažetak (opciono)</label>
-                        <textarea id="summary" name="summary" rows="3" 
-                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="Kratak opis vesti...">{{ old('summary', $news->summary) }}</textarea>
-                    </div>
-
-                    <!-- Content -->
-                    <div>
-                        <label for="content" class="block text-sm font-medium text-gray-700">Sadržaj vesti</label>
-                        <textarea id="content" name="content" rows="10" required 
-                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="Opišite detaljno šta se dešava...">{{ old('content', $news->content) }}</textarea>
-                    </div>
-
-                    <!-- Current Images -->
-                    @if($news->images && count($news->images) > 0)
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Trenutne slike</label>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                @foreach($news->images as $image)
-                                    <div class="relative">
-                                        <img src="{{ Storage::url($image) }}" alt="Current image" class="w-full h-24 object-cover rounded">
-                                    </div>
-                                @endforeach
-                            </div>
-                            <p class="mt-2 text-sm text-gray-500">Nove slike će zameniti trenutne slike.</p>
-                        </div>
-                    @endif
-
-                    <!-- Images -->
-                    <div>
-                        <label for="images" class="block text-sm font-medium text-gray-700">Nove slike (opciono)</label>
-                        <input id="images" name="images[]" type="file" multiple accept="image/*"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        <p class="mt-1 text-sm text-gray-500">Možete odabrati više slika. Maksimalna veličina: 2MB po slici.</p>
-                    </div>
-
-                    <!-- Current Videos -->
-                    @if($news->videos && count($news->videos) > 0)
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Trenutni video zapisi</label>
-                            <div class="space-y-2">
-                                @foreach($news->videos as $video)
-                                    <div class="flex items-center space-x-2">
-                                        <video controls class="w-32 h-20 rounded">
-                                            <source src="{{ Storage::url($video) }}" type="video/mp4">
-                                        </video>
-                                        <span class="text-sm text-gray-500">{{ basename($video) }}</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <p class="mt-2 text-sm text-gray-500">Novi video zapisi će zameniti trenutne video zapise.</p>
-                        </div>
-                    @endif
-
-                    <!-- Videos -->
-                    <div>
-                        <label for="videos" class="block text-sm font-medium text-gray-700">Novi video zapisi (opciono)</label>
-                        <input id="videos" name="videos[]" type="file" multiple accept="video/*"
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        <p class="mt-1 text-sm text-gray-500">Možete odabrati više video zapisa. Maksimalna veličina: 10MB po videu.</p>
-                    </div>
-
-                    <!-- Published Status -->
-                    <div class="flex items-center">
-                        <input id="is_published" name="is_published" type="checkbox" 
-                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                               {{ old('is_published', $news->is_published) ? 'checked' : '' }}>
-                        <label for="is_published" class="ml-2 block text-sm text-gray-900">
-                            Objavi vest
-                        </label>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <div class="flex justify-end space-x-3">
-                        <a href="{{ route('news.show', $news) }}" 
-                           class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            Otkaži
-                        </a>
-                        <button type="submit" 
-                                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            Ažuriraj vest
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+@section('content')
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Uredi vest</h1>
+        <p class="text-gray-600">Izmenite sadržaj vaše vesti</p>
     </div>
-</body>
-</html>
+
+    <!-- Form -->
+    <div class="bg-white shadow rounded-lg">
+        <form action="{{ route('news.update', $news) }}" method="POST" enctype="multipart/form-data" class="p-6">
+            @csrf
+            @method('PUT')
+            
+            <!-- Title -->
+            <div class="mb-6">
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Naslov vesti *</label>
+                <input type="text" name="title" id="title" value="{{ old('title', $news->title) }}" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('title') border-red-500 @enderror" 
+                       placeholder="Unesite naslov vesti" required>
+                @error('title')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Content -->
+            <div class="mb-6">
+                <label for="content" class="block text-sm font-medium text-gray-700 mb-2">Sadržaj vesti *</label>
+                <textarea name="content" id="content" rows="6" 
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('content') border-red-500 @enderror" 
+                          placeholder="Napišite sadržaj vesti" required>{{ old('content', $news->content) }}</textarea>
+                @error('content')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Current Images -->
+            @if($news->images->count() > 0)
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trenutne slike</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        @foreach($news->images as $image)
+                            <div class="relative">
+                                <img src="{{ Storage::url($image->file_path) }}" alt="Slika" class="w-full h-24 object-cover rounded">
+                                <button type="button" onclick="removeImage({{ $image->id }})" 
+                                        class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">
+                                    ×
+                                </button>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <!-- New Images -->
+            <div class="mb-6">
+                <label for="images[]" class="block text-sm font-medium text-gray-700 mb-2">Dodaj nove slike</label>
+                <input type="file" name="images[]" id="images" accept="image/*" multiple 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('images') border-red-500 @enderror">
+                @error('images')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                <p class="mt-1 text-sm text-gray-500">Možete odabrati više slika. Preporučena veličina: 800x600px</p>
+            </div>
+
+            <!-- Current Videos -->
+            @if($news->videos->count() > 0)
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trenutni video snimci</label>
+                    <div class="space-y-2">
+                        @foreach($news->videos as $video)
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <span class="text-sm text-gray-700">{{ basename($video->file_path) }}</span>
+                                <button type="button" onclick="removeVideo({{ $video->id }})" 
+                                        class="text-red-500 hover:text-red-700 text-sm">
+                                    Ukloni
+                                </button>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <!-- New Videos -->
+            <div class="mb-6">
+                <label for="videos[]" class="block text-sm font-medium text-gray-700 mb-2">Dodaj nove video snimke</label>
+                <input type="file" name="videos[]" id="videos" accept="video/*" multiple 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('videos') border-red-500 @enderror">
+                @error('videos')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                <p class="mt-1 text-sm text-gray-500">Možete odabrati više video snimaka. Maksimalna veličina: 50MB</p>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex justify-end space-x-4">
+                <a href="{{ route('news.index') }}" 
+                   class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Otkaži
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Sačuvaj izmene
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function removeImage(imageId) {
+    if (confirm('Da li ste sigurni da želite da uklonite ovu sliku?')) {
+        // Add hidden input to mark image for deletion
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'remove_images[]';
+        input.value = imageId;
+        document.querySelector('form').appendChild(input);
+        
+        // Remove the image element
+        event.target.closest('.relative').remove();
+    }
+}
+
+function removeVideo(videoId) {
+    if (confirm('Da li ste sigurni da želite da uklonite ovaj video?')) {
+        // Add hidden input to mark video for deletion
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'remove_videos[]';
+        input.value = videoId;
+        document.querySelector('form').appendChild(input);
+        
+        // Remove the video element
+        event.target.closest('.flex').remove();
+    }
+}
+</script>
+@endsection

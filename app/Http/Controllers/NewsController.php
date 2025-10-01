@@ -13,21 +13,24 @@ class NewsController extends Controller
     use AuthorizesRequests;
     public function index()
     {
+        // Check if user is logged in
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli vesti.');
+        }
+        
+        $user = Auth::user();
         $query = News::with('user')->published();
         
-        // Filter by user location if user is logged in
-        if (Auth::check()) {
-            $user = Auth::user();
-            $query->where(function($q) use ($user) {
-                // Show user's own news
-                $q->where('user_id', $user->id)
-                  // OR show news from same neighborhood and city
-                  ->orWhereHas('user', function($subQ) use ($user) {
-                      $subQ->where('neighborhood', $user->neighborhood)
-                           ->where('city', $user->city);
-                  });
-            });
-        }
+        // Filter by user location
+        $query->where(function($q) use ($user) {
+            // Show user's own news
+            $q->where('user_id', $user->id)
+              // OR show news from same neighborhood and city
+              ->orWhereHas('user', function($subQ) use ($user) {
+                  $subQ->where('neighborhood', $user->neighborhood)
+                       ->where('city', $user->city);
+              });
+        });
         
         $news = $query->orderBy('is_featured', 'desc')
             ->orderBy('created_at', 'desc')
@@ -38,17 +41,19 @@ class NewsController extends Controller
 
     public function show(News $news)
     {
-        // Check if user can view this news based on location
-        if (Auth::check()) {
-            $user = Auth::user();
-            $newsUser = $news->user;
-            
-            // Allow user to see their own news
-            if ($user->id !== $newsUser->id) {
-                // Check if news is from same neighborhood and city
-                if ($user->neighborhood !== $newsUser->neighborhood || $user->city !== $newsUser->city) {
-                    abort(403, 'Nemate dozvolu da vidite ovu vest. Vest je iz drugog dela grada.');
-                }
+        // Check if user is logged in
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli vesti.');
+        }
+        
+        $user = Auth::user();
+        $newsUser = $news->user;
+        
+        // Allow user to see their own news
+        if ($user->id !== $newsUser->id) {
+            // Check if news is from same neighborhood and city
+            if ($user->neighborhood !== $newsUser->neighborhood || $user->city !== $newsUser->city) {
+                abort(403, 'Nemate dozvolu da vidite ovu vest. Vest je iz drugog dela grada.');
             }
         }
         
