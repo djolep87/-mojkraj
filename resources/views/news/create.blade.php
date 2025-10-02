@@ -37,6 +37,26 @@
                 @enderror
             </div>
 
+            <!-- Category -->
+            <div class="mb-6">
+                <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Kategorija *</label>
+                <select name="category" id="category" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('category') border-red-500 @enderror" 
+                        required>
+                    <option value="">Odaberite kategoriju</option>
+                    <option value="opšte" {{ old('category') == 'opšte' ? 'selected' : '' }}>Opšte</option>
+                    <option value="dešavanja" {{ old('category') == 'dešavanja' ? 'selected' : '' }}>Dešavanja</option>
+                    <option value="bezbednost" {{ old('category') == 'bezbednost' ? 'selected' : '' }}>Bezbednost</option>
+                    <option value="zdravstvo" {{ old('category') == 'zdravstvo' ? 'selected' : '' }}>Zdravstvo</option>
+                    <option value="sport" {{ old('category') == 'sport' ? 'selected' : '' }}>Sport</option>
+                    <option value="kultura" {{ old('category') == 'kultura' ? 'selected' : '' }}>Kultura</option>
+                    <option value="ostalo" {{ old('category') == 'ostalo' ? 'selected' : '' }}>Ostalo</option>
+                </select>
+                @error('category')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             <!-- Images -->
             <div class="mb-6">
                 <label for="images[]" class="block text-sm font-medium text-gray-700 mb-2">Slike</label>

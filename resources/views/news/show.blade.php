@@ -3,7 +3,8 @@
 @section('title', $news->title . ' - Moj Kraj')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Back Button -->
     <div class="mb-6">
         <a href="{{ route('news.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
@@ -14,31 +15,29 @@
         </a>
     </div>
 
-    <!-- News Article -->
-    <article class="bg-white shadow rounded-lg overflow-hidden">
+        <!-- News Article -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <!-- Images -->
-        @if($news->images->count() > 0)
+        @if($news->images && count($news->images) > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
                 @foreach($news->images as $image)
                     <div class="aspect-w-16 aspect-h-9">
-                        <img src="{{ Storage::url($image->file_path) }}" alt="{{ $news->title }}" 
+                        <img src="{{ Storage::url($image) }}" alt="{{ $news->title }}" 
                              class="w-full h-64 object-cover rounded-lg">
                     </div>
                 @endforeach
             </div>
         @endif
 
-        <!-- Content -->
-        <div class="p-6">
+            <!-- Content -->
+            <div class="p-8">
             <!-- Title -->
             <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ $news->title }}</h1>
             
             <!-- Author Info -->
             <div class="flex items-center mb-6">
-                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-white font-semibold text-sm">{{ substr($news->user->name, 0, 1) }}</span>
                 </div>
                 <div>
                     <p class="text-sm text-gray-600">Autor</p>
@@ -49,20 +48,27 @@
                 </div>
             </div>
 
+            <!-- Category Badge -->
+            <div class="mb-6">
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {{ ucfirst($news->category) }}
+                </span>
+            </div>
+
             <!-- Content -->
             <div class="prose max-w-none mb-6">
                 <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ $news->content }}</p>
             </div>
 
             <!-- Videos -->
-            @if($news->videos->count() > 0)
+            @if($news->videos && count($news->videos) > 0)
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Video snimci</h3>
                     <div class="space-y-4">
                         @foreach($news->videos as $video)
                             <div class="bg-gray-100 rounded-lg p-4">
                                 <video controls class="w-full max-w-2xl mx-auto">
-                                    <source src="{{ Storage::url($video->file_path) }}" type="video/mp4">
+                                    <source src="{{ Storage::url($video) }}" type="video/mp4">
                                     Vaš browser ne podržava video tag.
                                 </video>
                             </div>
@@ -70,6 +76,38 @@
                     </div>
                 </div>
             @endif
+
+            <!-- Like Button -->
+            <!-- Author and Stats -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-lg font-semibold">
+                        {{ substr($news->user->name, 0, 1) }}
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-lg font-semibold text-gray-900">{{ $news->user->name }}</p>
+                        <p class="text-sm text-gray-500">{{ $news->user->neighborhood }}, {{ $news->user->city }}</p>
+                        <p class="text-sm text-gray-500">{{ $news->created_at->format('d.m.Y H:i') }}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <button id="like-btn" 
+                            data-news-id="{{ $news->id }}" 
+                            class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors duration-200">
+                        <svg class="w-6 h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span id="likes-count">{{ $news->likes }}</span>
+                    </button>
+                    <div class="flex items-center space-x-2 text-gray-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span>{{ $news->comments->count() }} komentara</span>
+                    </div>
+                </div>
+            </div>
 
             <!-- Actions (if user owns the news) -->
             @if(auth()->check() && auth()->user()->id === $news->user_id)
@@ -89,7 +127,265 @@
                     </form>
                 </div>
             @endif
+            </div>
         </div>
-    </article>
+
+        <!-- Comments Section -->
+        <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <h3 class="text-xl font-semibold text-gray-900 mb-6">Komentari</h3>
+            
+            <!-- Add Comment Form -->
+            <form id="comment-form" class="mb-8">
+                @csrf
+                <div class="flex space-x-4">
+                    <div class="flex-1">
+                        <textarea id="comment-content" name="content" rows="3" placeholder="Napišite komentar..." required
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors duration-200 self-end">
+                        Pošalji
+                    </button>
+                </div>
+            </form>
+
+            <!-- Comments List -->
+            <div id="comments-list" class="space-y-6">
+                @foreach($news->comments as $comment)
+                    <div class="flex space-x-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
+                            {{ substr($comment->user->name, 0, 1) }}
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="font-semibold text-gray-900">{{ $comment->user->name }}</h4>
+                                    <span class="text-sm text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
+                                </div>
+                                <p class="text-gray-700">{{ $comment->content }}</p>
+                            </div>
+                            
+                            <!-- Reply Button -->
+                            <button class="reply-btn mt-2 text-sm text-blue-600 hover:text-blue-700" data-comment-id="{{ $comment->id }}">
+                                Odgovori
+                            </button>
+                                
+                            <!-- Reply Form (hidden by default) -->
+                            <form class="reply-form hidden mt-3" data-parent-id="{{ $comment->id }}">
+                                @csrf
+                                <div class="flex space-x-2">
+                                    <input type="text" name="content" placeholder="Napišite odgovor..." required
+                                           class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                                        Pošalji
+                                    </button>
+                                </div>
+                            </form>
+                                
+                            <!-- Replies -->
+                            @if($comment->replies->count() > 0)
+                                <div class="mt-4 ml-6 space-y-3">
+                                    @foreach($comment->replies as $reply)
+                                        <div class="flex space-x-3">
+                                            <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                                                {{ substr($reply->user->name, 0, 1) }}
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-2 mb-1">
+                                                    <h5 class="font-semibold text-gray-900 text-sm">{{ $reply->user->name }}</h5>
+                                                    <span class="text-xs text-gray-500">{{ $reply->created_at->diffForHumans() }}</span>
+                                                </div>
+                                                <p class="text-gray-700 text-sm">{{ $reply->content }}</p>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+                
+                @if($news->comments->count() == 0)
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">Nema komentara</h3>
+                        <p class="mt-1 text-sm text-gray-500">Budite prvi koji će komentarisati ovu vest.</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Like functionality
+    const likeBtn = document.getElementById('like-btn');
+    const likesCount = document.getElementById('likes-count');
+    
+    likeBtn.addEventListener('click', function() {
+        const newsId = this.dataset.newsId;
+        
+        fetch(`/vesti/${newsId}/like`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            likesCount.textContent = data.likes;
+            
+            if (data.isLiked) {
+                likeBtn.className = 'flex items-center space-x-2 px-4 py-2 rounded-full transition-colors duration-200 bg-red-100 text-red-600';
+                likeBtn.querySelector('svg').classList.add('fill-current');
+            } else {
+                likeBtn.className = 'flex items-center space-x-2 px-4 py-2 rounded-full transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500';
+                likeBtn.querySelector('svg').classList.remove('fill-current');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+
+    // Comment form submission
+    const commentForm = document.getElementById('comment-form');
+    
+    commentForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const content = document.getElementById('comment-content').value;
+        const newsId = {{ $news->id }};
+        
+        // Check if content is empty
+        if (!content.trim()) {
+            alert('Molimo unesite komentar');
+            return;
+        }
+        
+        fetch(`/vesti/${newsId}/komentar`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Add comment to list
+            const commentHtml = `
+                <div class="flex space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
+                        {{ substr(auth()->user()->name, 0, 1) }}
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-gray-900">{{ auth()->user()->name }}</h4>
+                                <span class="text-sm text-gray-500">Sada</span>
+                            </div>
+                            <p class="text-gray-700">${data.comment.content}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const commentsList = document.getElementById('comments-list');
+            commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+            document.getElementById('comment-content').value = '';
+            
+            // Update comments count
+            const commentsCountElement = document.querySelector('.flex.items-center.space-x-6 .flex.items-center.space-x-2.text-gray-500 span');
+            if (commentsCountElement) {
+                const currentCount = parseInt(commentsCountElement.textContent.split(' ')[0]);
+                commentsCountElement.textContent = `${currentCount + 1} komentara`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Došlo je do greške prilikom slanja komentara. Molimo pokušajte ponovo.');
+        });
+    });
+
+    // Reply functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('reply-btn')) {
+            const commentId = e.target.dataset.commentId;
+            const replyForm = document.querySelector(`.reply-form[data-parent-id="${commentId}"]`);
+            replyForm.classList.toggle('hidden');
+        }
+    });
+
+    // Reply form submission using event delegation
+    document.addEventListener('submit', function(e) {
+        if (e.target.classList.contains('reply-form')) {
+            e.preventDefault();
+            
+            const content = e.target.querySelector('input[name="content"]').value;
+            const newsId = {{ $news->id }};
+            const parentId = e.target.dataset.parentId;
+            
+            fetch(`/vesti/${newsId}/komentar`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: content, parent_id: parentId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Add reply to list
+                const replyHtml = `
+                    <div class="flex space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                            {{ substr(auth()->user()->name, 0, 1) }}
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h5 class="font-medium text-gray-900 text-sm">{{ auth()->user()->name }}</h5>
+                                    <span class="text-xs text-gray-500">Sada</span>
+                                </div>
+                                <p class="text-gray-700 text-sm">${data.comment.content}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Find the parent comment and add reply
+                const parentComment = e.target.closest('.flex.space-x-4');
+                let repliesContainer = parentComment.querySelector('.mt-4.ml-6');
+                
+                if (!repliesContainer) {
+                    repliesContainer = document.createElement('div');
+                    repliesContainer.className = 'mt-4 ml-6 space-y-3';
+                    parentComment.querySelector('.flex-1').appendChild(repliesContainer);
+                }
+                
+                repliesContainer.insertAdjacentHTML('afterbegin', replyHtml);
+                
+                e.target.querySelector('input[name="content"]').value = '';
+                e.target.classList.add('hidden');
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    });
+
+
+
+
+
+});
+</script>
 @endsection

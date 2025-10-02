@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\News;
+use App\Models\NewsComment;
+use App\Models\NewsLike;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -59,7 +61,18 @@ class NewsController extends Controller
         
         $news->incrementViews();
         
-        return view('news.show', compact('news'));
+        // Load comments and likes
+        $news->load(['comments' => function($query) {
+            $query->orderBy('created_at', 'desc');
+        }, 'comments.user', 'comments.replies.user', 'likes']);
+        
+        // Check if current user liked this news
+        $isLiked = false;
+        if ($user) {
+            $isLiked = $news->likes()->where('user_id', $user->id)->exists();
+        }
+        
+        return view('news.show', compact('news', 'isLiked'));
     }
 
     public function create()
@@ -207,8 +220,55 @@ class NewsController extends Controller
 
     public function like(News $news)
     {
-        $news->incrementLikes();
+        $user = Auth::user();
         
-        return response()->json(['likes' => $news->likes]);
+        // Check if user already liked this news
+        $existingLike = NewsLike::where('news_id', $news->id)
+            ->where('user_id', $user->id)
+            ->first();
+        
+        if ($existingLike) {
+            // Unlike
+            $existingLike->delete();
+            $news->decrement('likes');
+            $isLiked = false;
+        } else {
+            // Like
+            NewsLike::create([
+                'news_id' => $news->id,
+                'user_id' => $user->id,
+            ]);
+            $news->increment('likes');
+            $isLiked = true;
+        }
+        
+        return response()->json([
+            'likes' => $news->fresh()->likes,
+            'isLiked' => $isLiked
+        ]);
+    }
+
+    public function comment(Request $request, News $news)
+    {
+        $request->validate([
+            'content' => 'required|string|max:1000',
+            'parent_id' => 'nullable|exists:news_comments,id'
+        ]);
+
+        $user = Auth::user();
+        
+        $comment = NewsComment::create([
+            'news_id' => $news->id,
+            'user_id' => $user->id,
+            'parent_id' => $request->parent_id,
+            'content' => $request->content,
+        ]);
+
+        $comment->load(['user', 'replies.user']);
+
+        return response()->json([
+            'success' => true,
+            'comment' => $comment
+        ]);
     }
 }

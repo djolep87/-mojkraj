@@ -12,8 +12,85 @@ use App\Http\Controllers\OfferController;
 
 // Home route
 Route::get('/', function () {
-    return view('welcome');
+    // Get latest 6 news posts for preview
+    $query = \App\Models\News::with(['user'])
+        ->published()
+        ->latest();
+    
+    // If user is logged in, filter by their location
+    if (auth()->check()) {
+        $user = auth()->user();
+        $query->where(function($q) use ($user) {
+            // Show user's own news
+            $q->where('user_id', $user->id)
+              // OR show news from same neighborhood and city
+              ->orWhereHas('user', function($subQ) use ($user) {
+                  $subQ->where('neighborhood', $user->neighborhood)
+                       ->where('city', $user->city);
+              });
+        });
+    }
+    
+    $latestNews = $query->limit(6)->get();
+    
+    return view('welcome', compact('latestNews'));
 })->name('home');
+
+// Business info page
+Route::get('/biznis-info', function () {
+    return view('business-info');
+})->name('business.info');
+
+// News info page
+Route::get('/vesti-info', function () {
+    return view('news-info');
+})->name('news.info');
+
+// Offers info page
+Route::get('/ponude-info', function () {
+    return view('offers-info');
+})->name('offers.info');
+
+// Pets info page
+
+// About page
+Route::get('/o-nama', function () {
+    return view('about');
+})->name('about');
+
+// Pets info page (public)
+Route::get('/kucni-ljubimci', function () {
+    // Get latest 6 pet posts for preview
+    $latestPets = \App\Models\PetPost::with(['user'])
+        ->active()
+        ->latest()
+        ->limit(6)
+        ->get();
+    
+    return view('pets-info', compact('latestPets'));
+})->name('pets.info');
+
+// Pets posts page (all posts from same area)
+Route::middleware(['auth:web'])->group(function () {
+    Route::get('/kucni-ljubimci/postovi', [App\Http\Controllers\PetPostController::class, 'index'])->name('pets.index');
+});
+
+// Pets posts routes (dashboard)
+Route::middleware(['auth:web'])->group(function () {
+    Route::get('/dashboard/kucni-ljubimci', [App\Http\Controllers\PetPostController::class, 'index'])->name('pets.dashboard');
+    Route::get('/dashboard/kucni-ljubimci/kreiraj', [App\Http\Controllers\PetPostController::class, 'create'])->name('pets.create');
+    Route::post('/dashboard/kucni-ljubimci', [App\Http\Controllers\PetPostController::class, 'store'])->name('pets.store');
+    Route::get('/dashboard/kucni-ljubimci/{pet:id}', [App\Http\Controllers\PetPostController::class, 'show'])->name('pets.show');
+    Route::get('/dashboard/kucni-ljubimci/{pet:id}/izmeni', [App\Http\Controllers\PetPostController::class, 'edit'])->name('pets.edit');
+    Route::put('/dashboard/kucni-ljubimci/{pet:id}', [App\Http\Controllers\PetPostController::class, 'update'])->name('pets.update');
+    Route::delete('/dashboard/kucni-ljubimci/{pet:id}', [App\Http\Controllers\PetPostController::class, 'destroy'])->name('pets.destroy');
+    
+    // AJAX routes
+    Route::post('/dashboard/kucni-ljubimci/{pet:id}/like', [App\Http\Controllers\PetPostController::class, 'like'])->name('pets.like');
+    Route::post('/dashboard/kucni-ljubimci/{pet:id}/komentar', [App\Http\Controllers\PetPostController::class, 'comment'])->name('pets.comment');
+    Route::delete('/dashboard/kucni-ljubimci/{pet:id}/slika/{imageIndex}', [App\Http\Controllers\PetPostController::class, 'deleteImage'])->name('pets.delete-image');
+    Route::delete('/dashboard/kucni-ljubimci/{pet:id}/video/{videoIndex}', [App\Http\Controllers\PetPostController::class, 'deleteVideo'])->name('pets.delete-video');
+});
 
 // Auth routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -49,6 +126,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/vesti/{news}', [NewsController::class, 'update'])->name('news.update');
     Route::delete('/vesti/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
     Route::post('/vesti/{news}/like', [NewsController::class, 'like'])->name('news.like');
+    Route::post('/vesti/{news}/komentar', [NewsController::class, 'comment'])->name('news.comment');
 });
 
 // Public news show route (must be after create route)

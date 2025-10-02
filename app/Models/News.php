@@ -40,6 +40,21 @@ class News extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function comments()
+    {
+        return $this->hasMany(NewsComment::class, 'news_id')->whereNull('parent_id');
+    }
+
+    public function allComments()
+    {
+        return $this->hasMany(NewsComment::class, 'news_id');
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(NewsLike::class, 'news_id');
+    }
+
     public function scopePublished($query)
     {
         return $query->where('is_published', true);
