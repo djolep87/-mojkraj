@@ -2,131 +2,145 @@
 
 @section('title', $news->title . ' - Moj Kraj')
 
+
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Back Button -->
-    <div class="mb-6">
-        <a href="{{ route('news.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            Nazad na vesti
-        </a>
-    </div>
+         <!-- Back Button -->
+         <div class="mb-6">
+             <a href="{{ route('news.index') }}" class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium">
+                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                 </svg>
+                 Nazad na vesti
+             </a>
+         </div>
 
-        <!-- News Article -->
+        <!-- Post Content -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <!-- Images -->
-        @if($news->images && count($news->images) > 0)
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
-                @foreach($news->images as $image)
+            <!-- Images -->
+            @if($news->images && count($news->images) > 0)
+                <div class="relative">
                     <div class="aspect-w-16 aspect-h-9">
-                        <img src="{{ Storage::url($image) }}" alt="{{ $news->title }}" 
-                             class="w-full h-64 object-cover rounded-lg">
+                        <img src="{{ Storage::url($news->images[0]) }}" alt="{{ $news->title }}" class="w-full h-96 object-cover">
                     </div>
-                @endforeach
-            </div>
-        @endif
+                    @if(count($news->images) > 1)
+                        <div class="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                            +{{ count($news->images) - 1 }} više slika
+                        </div>
+                    @endif
+                </div>
+            @endif
 
-            <!-- Content -->
+            <!-- Post Header -->
             <div class="p-8">
-            <!-- Title -->
-            <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ $news->title }}</h1>
-            
-            <!-- Author Info -->
-            <div class="flex items-center mb-6">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center mr-3">
-                    <span class="text-white font-semibold text-sm">{{ substr($news->user->name, 0, 1) }}</span>
+                <!-- Category Badge -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {{ ucfirst($news->category) }}
+                        </span>
+                    </div>
+                    
+                    @if(auth()->id() === $news->user_id)
+                        <div class="flex items-center space-x-2">
+                            <a href="{{ route('news.edit', $news) }}" class="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </a>
+                            <form method="POST" action="{{ route('news.destroy', $news) }}" class="inline" onsubmit="return confirm('Da li ste sigurni da želite da obrišete ovu vest?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    @endif
                 </div>
-                <div>
-                    <p class="text-sm text-gray-600">Autor</p>
-                    <p class="font-medium text-gray-900">{{ $news->user->name }}</p>
+
+                <!-- Title -->
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ $news->title }}</h1>
+
+                <!-- Author Info -->
+                <div class="flex items-center mb-6">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center mr-3">
+                        <span class="text-white font-semibold text-sm">{{ substr($news->user->name, 0, 1) }}</span>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Autor</p>
+                        <p class="font-medium text-gray-900">{{ $news->user->name }}</p>
+                    </div>
+                    <div class="ml-auto text-sm text-gray-500">
+                        {{ $news->created_at->format('d.m.Y H:i') }}
+                    </div>
                 </div>
-                <div class="ml-auto text-sm text-gray-500">
-                    {{ $news->created_at->format('d.m.Y H:i') }}
+
+                <!-- Content -->
+                <div class="prose max-w-none mb-8">
+                    <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ $news->content }}</p>
                 </div>
-            </div>
 
-            <!-- Category Badge -->
-            <div class="mb-6">
-                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {{ ucfirst($news->category) }}
-                </span>
-            </div>
+                <!-- Additional Images -->
+                @if($news->images && count($news->images) > 1)
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Dodatne slike</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            @foreach(array_slice($news->images, 1) as $image)
+                                <div class="aspect-w-16 aspect-h-9">
+                                    <img src="{{ Storage::url($image) }}" alt="{{ $news->title }}" class="w-full h-32 object-cover rounded-lg">
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
-            <!-- Content -->
-            <div class="prose max-w-none mb-6">
-                <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ $news->content }}</p>
-            </div>
-
-            <!-- Videos -->
-            @if($news->videos && count($news->videos) > 0)
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Video snimci</h3>
-                    <div class="space-y-4">
-                        @foreach($news->videos as $video)
-                            <div class="bg-gray-100 rounded-lg p-4">
-                                <video controls class="w-full max-w-2xl mx-auto">
+                <!-- Videos -->
+                @if($news->videos && count($news->videos) > 0)
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Video snimci</h3>
+                        <div class="space-y-4">
+                            @foreach($news->videos as $video)
+                                <video controls class="w-full rounded-lg">
                                     <source src="{{ Storage::url($video) }}" type="video/mp4">
                                     Vaš browser ne podržava video tag.
                                 </video>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            @endif
+                @endif
 
-            <!-- Like Button -->
-            <!-- Author and Stats -->
-            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                <div class="flex items-center">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-lg font-semibold">
-                        {{ substr($news->user->name, 0, 1) }}
+                <!-- Author and Stats -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-lg font-semibold">
+                            {{ substr($news->user->name, 0, 1) }}
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-lg font-semibold text-gray-900">{{ $news->user->name }}</p>
+                            <p class="text-sm text-gray-500">{{ $news->user->neighborhood }}, {{ $news->user->city }}</p>
+                            <p class="text-sm text-gray-500">{{ $news->created_at->format('d.m.Y H:i') }}</p>
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-lg font-semibold text-gray-900">{{ $news->user->name }}</p>
-                        <p class="text-sm text-gray-500">{{ $news->user->neighborhood }}, {{ $news->user->city }}</p>
-                        <p class="text-sm text-gray-500">{{ $news->created_at->format('d.m.Y H:i') }}</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-6">
-                    <button id="like-btn" 
-                            data-news-id="{{ $news->id }}" 
-                            class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors duration-200">
-                        <svg class="w-6 h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                        <span id="likes-count">{{ $news->likes }}</span>
-                    </button>
-                    <div class="flex items-center space-x-2 text-gray-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                        <span>{{ $news->comments->count() }} komentara</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Actions (if user owns the news) -->
-            @if(auth()->check() && auth()->user()->id === $news->user_id)
-                <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-                    <a href="{{ route('news.edit', $news) }}" 
-                       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        Uredi vest
-                    </a>
-                    <form action="{{ route('news.destroy', $news) }}" method="POST" class="inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" 
-                                class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                                onclick="return confirm('Da li ste sigurni da želite da obrišete ovu vest?')">
-                            Obriši vest
+                    
+                    <div class="flex items-center space-x-6">
+                        <button id="like-btn" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors duration-200" data-news-id="{{ $news->id }}">
+                            <svg class="w-6 h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span id="likes-count">{{ $news->likes }}</span>
                         </button>
-                    </form>
+                        <div class="flex items-center space-x-2 text-gray-500">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span>{{ $news->comments->count() }} komentara</span>
+                        </div>
+                    </div>
                 </div>
-            @endif
             </div>
         </div>
 
@@ -168,8 +182,8 @@
                             <button class="reply-btn mt-2 text-sm text-blue-600 hover:text-blue-700" data-comment-id="{{ $comment->id }}">
                                 Odgovori
                             </button>
-                                
-                            <!-- Reply Form (hidden by default) -->
+                            
+                            <!-- Reply Form (Hidden by default) -->
                             <form class="reply-form hidden mt-3" data-parent-id="{{ $comment->id }}">
                                 @csrf
                                 <div class="flex space-x-2">
@@ -180,27 +194,28 @@
                                     </button>
                                 </div>
                             </form>
-                                
+                            
                             <!-- Replies -->
                             @if($comment->replies->count() > 0)
                                 <div class="mt-4 ml-6 space-y-3">
                                     @foreach($comment->replies as $reply)
                                         <div class="flex space-x-3">
-                                            <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                                            <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                                                 {{ substr($reply->user->name, 0, 1) }}
                                             </div>
                                             <div class="flex-1">
-                                                <div class="flex items-center space-x-2 mb-1">
-                                                    <h5 class="font-semibold text-gray-900 text-sm">{{ $reply->user->name }}</h5>
-                                                    <span class="text-xs text-gray-500">{{ $reply->created_at->diffForHumans() }}</span>
+                                                <div class="bg-gray-50 rounded-lg p-3">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <h5 class="font-medium text-gray-900 text-sm">{{ $reply->user->name }}</h5>
+                                                        <span class="text-xs text-gray-500">{{ $reply->created_at->diffForHumans() }}</span>
+                                                    </div>
+                                                    <p class="text-gray-700 text-sm">{{ $reply->content }}</p>
                                                 </div>
-                                                <p class="text-gray-700 text-sm">{{ $reply->content }}</p>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
                             @endif
-                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -252,8 +267,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Comment form submission
+    // Comment functionality
     const commentForm = document.getElementById('comment-form');
+    const commentsList = document.getElementById('comments-list');
     
     commentForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -300,7 +316,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            const commentsList = document.getElementById('comments-list');
             commentsList.insertAdjacentHTML('afterbegin', commentHtml);
             document.getElementById('comment-content').value = '';
             
@@ -345,29 +360,27 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                // Add reply to list
+                // Add reply to DOM
                 const replyHtml = `
                     <div class="flex space-x-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-xs font-semibold">
                             {{ substr(auth()->user()->name, 0, 1) }}
                         </div>
                         <div class="flex-1">
-                            <div class="bg-gray-50 rounded-lg p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <h5 class="font-medium text-gray-900 text-sm">{{ auth()->user()->name }}</h5>
-                                    <span class="text-xs text-gray-500">Sada</span>
-                                </div>
-                                <p class="text-gray-700 text-sm">${data.comment.content}</p>
+                            <div class="flex items-center space-x-2 mb-1">
+                                <h5 class="font-semibold text-gray-900 text-sm">{{ auth()->user()->name }}</h5>
+                                <span class="text-xs text-gray-500">Sada</span>
                             </div>
+                            <p class="text-gray-700 text-sm">${data.comment.content}</p>
                         </div>
                     </div>
                 `;
                 
-                // Find the parent comment and add reply
                 const parentComment = e.target.closest('.flex.space-x-4');
                 let repliesContainer = parentComment.querySelector('.mt-4.ml-6');
                 
                 if (!repliesContainer) {
+                    // Create replies container if it doesn't exist
                     repliesContainer = document.createElement('div');
                     repliesContainer.className = 'mt-4 ml-6 space-y-3';
                     parentComment.querySelector('.flex-1').appendChild(repliesContainer);
@@ -375,17 +388,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 repliesContainer.insertAdjacentHTML('afterbegin', replyHtml);
                 
+                // Clear form and hide it
                 e.target.querySelector('input[name="content"]').value = '';
                 e.target.classList.add('hidden');
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
     });
-
-
-
-
-
 });
 </script>
 @endsection
