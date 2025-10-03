@@ -43,7 +43,20 @@ Route::get('/biznis-info', function () {
 
 // News info page
 Route::get('/vesti-info', function () {
-    return view('news-info');
+    // Get latest news only if user is logged in
+    $latestNews = collect();
+    
+    if (auth()->check()) {
+        $user = auth()->user();
+        $latestNews = \App\Models\News::with('user')
+            ->where('city', $user->city)
+            ->where('neighborhood', $user->neighborhood)
+            ->orderBy('created_at', 'desc')
+            ->limit(6)
+            ->get();
+    }
+    
+    return view('news-info', compact('latestNews'));
 })->name('news.info');
 
 // Offers info page
@@ -108,15 +121,24 @@ Route::post('/business/logout', [BusinessLoginController::class, 'logout'])->nam
 Route::get('/business/register', [BusinessRegisterController::class, 'showRegistrationForm'])->name('business.register');
 Route::post('/business/register', [BusinessRegisterController::class, 'register']);
 
-// Public business routes
-Route::get('/biznisi', [BusinessController::class, 'index'])->name('businesses.index');
-Route::get('/biznisi/{business}', [BusinessController::class, 'show'])->name('businesses.show');
+// Business routes (all protected)
+Route::middleware('auth:web')->group(function () {
+    Route::get('/biznisi', [BusinessController::class, 'index'])->name('businesses.index');
+    Route::get('/biznisi/{business}', [BusinessController::class, 'show'])->name('businesses.show');
+    Route::get('/biznisi-lista', [BusinessController::class, 'listBusinesses'])->name('businesses.list');
+});
 
-// Public news routes
-Route::get('/vesti', [NewsController::class, 'index'])->name('news.index');
+// News routes (all protected)
+Route::middleware('auth:web')->group(function () {
+    Route::get('/vesti', [NewsController::class, 'index'])->name('news.index');
+    Route::get('/vesti/{news}', [NewsController::class, 'show'])->name('news.show');
+});
 
-// Public offers routes
-Route::get('/ponude', [OfferController::class, 'index'])->name('offers.index');
+// Offers routes (all protected)
+Route::middleware('auth:web')->group(function () {
+    Route::get('/ponude', [OfferController::class, 'index'])->name('offers.index');
+    Route::get('/ponude/{offer}', [OfferController::class, 'show'])->name('offers.show');
+});
 
 // News routes for regular users (protected)
 Route::middleware('auth')->group(function () {
@@ -129,11 +151,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/vesti/{news}/komentar', [NewsController::class, 'comment'])->name('news.comment');
 });
 
-// Public news show route (must be after create route)
-Route::get('/vesti/{news}', [NewsController::class, 'show'])->name('news.show');
-
-// Public offers show route
-Route::get('/ponude/{offer}', [OfferController::class, 'show'])->name('offers.show');
 
 // Dashboard (protected routes)
 Route::middleware('auth')->group(function () {

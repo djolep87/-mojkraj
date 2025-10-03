@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class BusinessController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // Check if user is logged in
         if (!Auth::check()) {
@@ -18,19 +18,77 @@ class BusinessController extends Controller
         
         $user = Auth::user();
         
-        // Filter businesses by user's location (neighborhood and city)
-        $businesses = Business::with('businessUser')
-            ->whereHas('businessUser', function($query) use ($user) {
-                $query->where('neighborhood', $user->neighborhood)
-                      ->where('city', $user->city);
+        // Start with base query
+        $query = Business::with('businessUser')
+            ->whereHas('businessUser', function($q) use ($user) {
+                $q->where('neighborhood', $user->neighborhood)
+                  ->where('city', $user->city);
             })
             ->active()
-            ->valid()
-            ->orderBy('is_featured', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(12);
-
-        return view('businesses.index', compact('businesses', 'user'));
+            ->valid();
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('businessUser', function($subQuery) use ($search) {
+                      $subQuery->where('company_name', 'like', "%{$search}%")
+                               ->orWhere('contact_person', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Apply type filter
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        
+        // Apply price range filter
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->price_max);
+        }
+        
+        // Apply featured filter
+        if ($request->filled('featured')) {
+            $query->where('is_featured', true);
+        }
+        
+        // Apply sorting
+        $sortBy = $request->get('sort', 'featured');
+        switch ($sortBy) {
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'price_low':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'views':
+                $query->orderBy('views', 'desc');
+                break;
+            case 'featured':
+            default:
+                $query->orderBy('is_featured', 'desc')->orderBy('created_at', 'desc');
+                break;
+        }
+        
+        $businesses = $query->paginate(12)->withQueryString();
+        
+        // Get filter options
+        $types = Business::distinct()->pluck('type')->filter();
+        $priceRange = Business::selectRaw('MIN(price) as min_price, MAX(price) as max_price')->first();
+        
+        return view('businesses.index', compact('businesses', 'user', 'types', 'priceRange'));
     }
 
     public function show(Business $business)
@@ -134,5 +192,58 @@ class BusinessController extends Controller
         $business->delete();
 
         return redirect()->route('business.dashboard')->with('success', 'Biznis je uspešno obrisan!');
+    }
+
+    public function listBusinesses(Request $request)
+    {
+        // Check if user is logged in
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli biznise.');
+        }
+        
+        $user = Auth::user();
+        
+        // Start with base query for business users
+        $query = BusinessUser::where('neighborhood', $user->neighborhood)
+            ->where('city', $user->city)
+            ->where('is_active', true);
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('company_name', 'like', "%{$search}%")
+                  ->orWhere('contact_person', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('business_type', 'like', "%{$search}%");
+            });
+        }
+        
+        // Apply business type filter
+        if ($request->filled('business_type')) {
+            $query->where('business_type', $request->business_type);
+        }
+        
+        // Apply sorting
+        $sortBy = $request->get('sort', 'newest');
+        switch ($sortBy) {
+            case 'name':
+                $query->orderBy('company_name', 'asc');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
+        
+        $businesses = $query->paginate(12)->withQueryString();
+        
+        // Get filter options
+        $businessTypes = BusinessUser::distinct()->pluck('business_type')->filter();
+        
+        return view('businesses.list', compact('businesses', 'user', 'businessTypes'));
     }
 }

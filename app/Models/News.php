@@ -21,6 +21,8 @@ class News extends Model
         'is_featured',
         'views',
         'likes',
+        'city',
+        'neighborhood',
     ];
 
     protected function casts(): array

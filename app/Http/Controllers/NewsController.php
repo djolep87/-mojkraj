@@ -121,6 +121,8 @@ class NewsController extends Controller
             'images' => $images,
             'videos' => $videos,
             'is_published' => true,
+            'city' => $user->city,
+            'neighborhood' => $user->neighborhood,
         ]);
 
         return redirect()->route('news.show', $news)->with('success', 'Vest je uspešno kreirana!');

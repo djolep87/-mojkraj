@@ -12,7 +12,7 @@ class OfferController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index()
+    public function index(Request $request)
     {
         // Check if user is logged in
         if (!Auth::check()) {
@@ -21,19 +21,87 @@ class OfferController extends Controller
         
         $user = Auth::user();
         
-        // Filter offers by user's location (neighborhood and city)
-        $offers = Offer::with('businessUser')
-            ->whereHas('businessUser', function($query) use ($user) {
-                $query->where('neighborhood', $user->neighborhood)
-                      ->where('city', $user->city);
+        // Start with base query
+        $query = Offer::with('businessUser')
+            ->whereHas('businessUser', function($q) use ($user) {
+                $q->where('neighborhood', $user->neighborhood)
+                  ->where('city', $user->city);
             })
             ->active()
-            ->valid()
-            ->orderBy('is_featured', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(12);
+            ->valid();
+        
+        // Filter by specific business user if requested
+        if ($request->filled('business_user')) {
+            $query->where('business_user_id', $request->business_user);
+        }
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('businessUser', function($subQuery) use ($search) {
+                      $subQuery->where('company_name', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Apply type filter
+        if ($request->filled('type')) {
+            $query->where('offer_type', $request->type);
+        }
+        
+        // Apply price range filter
+        if ($request->filled('price_min')) {
+            $query->where('original_price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('original_price', '<=', $request->price_max);
+        }
+        
+        // Apply featured filter
+        if ($request->filled('featured')) {
+            $query->where('is_featured', true);
+        }
+        
+        // Apply sorting
+        $sortBy = $request->get('sort', 'featured');
+        switch ($sortBy) {
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'price_low':
+                $query->orderBy('original_price', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('original_price', 'desc');
+                break;
+            case 'views':
+                $query->orderBy('views', 'desc');
+                break;
+            case 'featured':
+            default:
+                $query->orderBy('is_featured', 'desc')->orderBy('created_at', 'desc');
+                break;
+        }
+        
+        $offers = $query->paginate(12)->withQueryString();
+        
+        // Get filter options
+        $types = Offer::distinct()->pluck('offer_type')->filter();
+        $priceRange = Offer::selectRaw('MIN(original_price) as min_price, MAX(original_price) as max_price')->first();
+        
+        // Get business user info if filtering by specific business
+        $businessUser = null;
+        if ($request->filled('business_user')) {
+            $businessUser = \App\Models\BusinessUser::find($request->business_user);
+        }
 
-        return view('offers.index', compact('offers', 'user'));
+        return view('offers.index', compact('offers', 'user', 'types', 'priceRange', 'businessUser'));
     }
 
     public function show(Offer $offer)

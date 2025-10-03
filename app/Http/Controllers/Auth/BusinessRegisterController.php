@@ -7,6 +7,7 @@ use App\Models\BusinessUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules;
 
 class BusinessRegisterController extends Controller
@@ -31,7 +32,14 @@ class BusinessRegisterController extends Controller
             'postal_code' => ['nullable', 'string', 'max:10'],
             'description' => ['nullable', 'string', 'max:1000'],
             'website' => ['nullable', 'url', 'max:255'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
+
+        // Handle logo upload
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('business-logos', 'public');
+        }
 
         $businessUser = BusinessUser::create([
             'company_name' => $request->company_name,
@@ -46,6 +54,7 @@ class BusinessRegisterController extends Controller
             'postal_code' => $request->postal_code,
             'description' => $request->description,
             'website' => $request->website,
+            'logo' => $logoPath,
         ]);
 
         Auth::guard('business')->login($businessUser);

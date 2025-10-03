@@ -6,10 +6,27 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Ponude u vašem komšiluku</h1>
-        <p class="text-gray-600">
-            Prikazane su ponude iz {{ $user->neighborhood }}, {{ $user->city }}
-        </p>
+        @if($businessUser)
+            <div class="flex items-center mb-4">
+                <a href="{{ route('businesses.list') }}" class="text-blue-600 hover:text-blue-800 mr-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </a>
+                <span class="text-gray-500">← Nazad na sve biznise</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                Ponude od {{ $businessUser->company_name }}
+            </h1>
+            <p class="text-gray-600">
+                Prikazane su ponude od {{ $businessUser->company_name }} iz {{ $user->neighborhood }}, {{ $user->city }}
+            </p>
+        @else
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Ponude u vašem komšiluku</h1>
+            <p class="text-gray-600">
+                Prikazane su ponude iz {{ $user->neighborhood }}, {{ $user->city }}
+            </p>
+        @endif
     </div>
 
     <!-- Success/Error Messages -->

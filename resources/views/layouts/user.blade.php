@@ -163,8 +163,8 @@
                 <div>
                     <h4 class="text-md font-semibold mb-4">Sadržaj</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="{{ route('news.index') }}" class="text-gray-300 hover:text-white">Vesti</a></li>
-                        <li><a href="{{ route('businesses.index') }}" class="text-gray-300 hover:text-white">Biznisi</a></li>
+                        <li><a href="{{ route('news.info') }}" class="text-gray-300 hover:text-white">Vesti</a></li>
+                        <li><a href="{{ route('business.info') }}" class="text-gray-300 hover:text-white">Biznisi</a></li>
                         <li><a href="{{ route('offers.index') }}" class="text-gray-300 hover:text-white">Ponude</a></li>
                     </ul>
                 </div>
