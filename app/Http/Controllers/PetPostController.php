@@ -53,7 +53,7 @@ class PetPostController extends Controller
             });
         }
 
-        $posts = $query->paginate(12);
+        $posts = $query->paginate(24);
 
         return view('pets.index', compact('posts'));
     }

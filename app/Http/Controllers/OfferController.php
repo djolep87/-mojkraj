@@ -89,7 +89,7 @@ class OfferController extends Controller
                 break;
         }
         
-        $offers = $query->paginate(12)->withQueryString();
+        $offers = $query->paginate(24)->withQueryString();
         
         // Get filter options
         $types = Offer::distinct()->pluck('offer_type')->filter();

@@ -36,7 +36,7 @@ class NewsController extends Controller
         
         $news = $query->orderBy('is_featured', 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(12);
+            ->paginate(24);
 
         return view('news.index', compact('news'));
     }

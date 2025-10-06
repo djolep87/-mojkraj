@@ -82,7 +82,7 @@ class BusinessController extends Controller
                 break;
         }
         
-        $businesses = $query->paginate(12)->withQueryString();
+        $businesses = $query->paginate(24)->withQueryString();
         
         // Get filter options
         $types = Business::distinct()->pluck('type')->filter();
@@ -114,8 +114,8 @@ class BusinessController extends Controller
     public function dashboard()
     {
         $businessUser = Auth::guard('business')->user();
-        $businesses = $businessUser->businesses()->orderBy('created_at', 'desc')->paginate(5);
-        $offers = $businessUser->offers()->orderBy('created_at', 'desc')->paginate(5);
+        $businesses = $businessUser->businesses()->orderBy('created_at', 'desc')->paginate(24);
+        $offers = $businessUser->offers()->orderBy('created_at', 'desc')->paginate(24);
         
         return view('business.dashboard', compact('businesses', 'offers'));
     }
@@ -239,7 +239,7 @@ class BusinessController extends Controller
                 break;
         }
         
-        $businesses = $query->paginate(12)->withQueryString();
+        $businesses = $query->paginate(24)->withQueryString();
         
         // Get filter options
         $businessTypes = BusinessUser::distinct()->pluck('business_type')->filter();
