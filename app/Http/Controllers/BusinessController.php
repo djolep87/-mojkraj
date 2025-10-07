@@ -102,7 +102,7 @@ class BusinessController extends Controller
         $businessUser = $business->businessUser;
         
         // Check if business is from same neighborhood and city
-        if ($user->neighborhood !== $businessUser->neighborhood || $user->city !== $businessUser->city) {
+        if (strcasecmp($user->neighborhood, $businessUser->neighborhood) !== 0 || strcasecmp($user->city, $businessUser->city) !== 0) {
             abort(403, 'Nemate dozvolu da vidite ovaj biznis. Biznis je iz drugog dela grada.');
         }
         
@@ -204,8 +204,8 @@ class BusinessController extends Controller
         $user = Auth::user();
         
         // Start with base query for business users
-        $query = BusinessUser::where('neighborhood', $user->neighborhood)
-            ->where('city', $user->city)
+        $query = BusinessUser::whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
+            ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city])
             ->where('is_active', true);
         
         // Apply search filter

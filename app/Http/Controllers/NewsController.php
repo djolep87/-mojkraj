@@ -29,13 +29,13 @@ class NewsController extends Controller
             $q->where('user_id', $user->id)
               // OR show news from same neighborhood and city
               ->orWhereHas('user', function($subQ) use ($user) {
-                  $subQ->where('neighborhood', $user->neighborhood)
-                       ->where('city', $user->city);
+                  $subQ->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
+                       ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
               });
         });
         
-        $news = $query->orderBy('is_featured', 'desc')
-            ->orderBy('created_at', 'desc')
+        $news = $query->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate(24);
 
         return view('news.index', compact('news'));
@@ -54,7 +54,7 @@ class NewsController extends Controller
         // Allow user to see their own news
         if ($user->id !== $newsUser->id) {
             // Check if news is from same neighborhood and city
-            if ($user->neighborhood !== $newsUser->neighborhood || $user->city !== $newsUser->city) {
+            if (strcasecmp($user->neighborhood, $newsUser->neighborhood) !== 0 || strcasecmp($user->city, $newsUser->city) !== 0) {
                 abort(403, 'Nemate dozvolu da vidite ovu vest. Vest je iz drugog dela grada.');
             }
         }

@@ -23,8 +23,8 @@ class PetPostController extends Controller
         // Filter by user's neighborhood/city - only show posts from same area
         if ($user) {
             $query->whereHas('user', function($q) use ($user) {
-                $q->where('neighborhood', $user->neighborhood)
-                  ->where('city', $user->city);
+                $q->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
+                  ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
             });
         }
 
@@ -115,7 +115,7 @@ class PetPostController extends Controller
         $user = Auth::user();
         
         // Check if user can view this post (same neighborhood/city)
-        if ($user && ($pet->user->neighborhood !== $user->neighborhood || $pet->user->city !== $user->city)) {
+        if ($user && (strcasecmp($pet->user->neighborhood, $user->neighborhood) !== 0 || strcasecmp($pet->user->city, $user->city) !== 0)) {
             abort(403, 'Nemate pristup ovom postu. Možete videti samo postove iz vašeg dela grada.');
         }
         

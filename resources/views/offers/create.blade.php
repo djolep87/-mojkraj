@@ -12,7 +12,7 @@
 
     <!-- Form -->
     <div class="bg-white shadow rounded-lg">
-        <form action="{{ route('business.offers.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
+        <form action="{{ route('offers.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
             @csrf
             
             <!-- Title -->

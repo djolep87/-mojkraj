@@ -156,9 +156,52 @@
                                 <label for="neighborhood" class="block text-sm font-semibold text-gray-700 mb-2">
                                     Komšiluk/Deo grada
                                 </label>
-                                <input id="neighborhood" name="neighborhood" type="text" required 
-                                       class="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 @error('neighborhood') border-red-500 focus:ring-red-500 focus:border-red-500 @enderror" 
-                                       placeholder="Stari grad" value="{{ old('neighborhood') }}">
+                                <select id="neighborhood" name="neighborhood" required 
+                                        class="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 @error('neighborhood') border-red-500 focus:ring-red-500 focus:border-red-500 @enderror">
+                                    <option value="">Izaberite deo grada</option>
+                                    <option value="Vračar" {{ old('neighborhood') == 'Vračar' ? 'selected' : '' }}>Vračar</option>
+                                    <option value="Stari grad" {{ old('neighborhood') == 'Stari grad' ? 'selected' : '' }}>Stari grad</option>
+                                    <option value="Zvezdara" {{ old('neighborhood') == 'Zvezdara' ? 'selected' : '' }}>Zvezdara</option>
+                                    <option value="Palilula" {{ old('neighborhood') == 'Palilula' ? 'selected' : '' }}>Palilula</option>
+                                    <option value="Zemun" {{ old('neighborhood') == 'Zemun' ? 'selected' : '' }}>Zemun</option>
+                                    <option value="Novi Beograd" {{ old('neighborhood') == 'Novi Beograd' ? 'selected' : '' }}>Novi Beograd</option>
+                                    <option value="Savski venac" {{ old('neighborhood') == 'Savski venac' ? 'selected' : '' }}>Savski venac</option>
+                                    <option value="Voždovac" {{ old('neighborhood') == 'Voždovac' ? 'selected' : '' }}>Voždovac</option>
+                                    <option value="Rakovica" {{ old('neighborhood') == 'Rakovica' ? 'selected' : '' }}>Rakovica</option>
+                                    <option value="Čukarica" {{ old('neighborhood') == 'Čukarica' ? 'selected' : '' }}>Čukarica</option>
+                                    <option value="Grocka" {{ old('neighborhood') == 'Grocka' ? 'selected' : '' }}>Grocka</option>
+                                    <option value="Barajevo" {{ old('neighborhood') == 'Barajevo' ? 'selected' : '' }}>Barajevo</option>
+                                    <option value="Obrenovac" {{ old('neighborhood') == 'Obrenovac' ? 'selected' : '' }}>Obrenovac</option>
+                                    <option value="Lazarevac" {{ old('neighborhood') == 'Lazarevac' ? 'selected' : '' }}>Lazarevac</option>
+                                    <option value="Mladenovac" {{ old('neighborhood') == 'Mladenovac' ? 'selected' : '' }}>Mladenovac</option>
+                                    <option value="Sopot" {{ old('neighborhood') == 'Sopot' ? 'selected' : '' }}>Sopot</option>
+                                    <option value="Surčin" {{ old('neighborhood') == 'Surčin' ? 'selected' : '' }}>Surčin</option>
+                                    <option value="Zemun Polje" {{ old('neighborhood') == 'Zemun Polje' ? 'selected' : '' }}>Zemun Polje</option>
+                                    <option value="Batajnica" {{ old('neighborhood') == 'Batajnica' ? 'selected' : '' }}>Batajnica</option>
+                                    <option value="Karaburma" {{ old('neighborhood') == 'Karaburma' ? 'selected' : '' }}>Karaburma</option>
+                                    <option value="Ripanj" {{ old('neighborhood') == 'Ripanj' ? 'selected' : '' }}>Ripanj</option>
+                                    <option value="Beli Potok" {{ old('neighborhood') == 'Beli Potok' ? 'selected' : '' }}>Beli Potok</option>
+                                    <option value="Leštane" {{ old('neighborhood') == 'Leštane' ? 'selected' : '' }}>Leštane</option>
+                                    <option value="Vrčin" {{ old('neighborhood') == 'Vrčin' ? 'selected' : '' }}>Vrčin</option>
+                                    <option value="Umka" {{ old('neighborhood') == 'Umka' ? 'selected' : '' }}>Umka</option>
+                                    <option value="Veliko Selo" {{ old('neighborhood') == 'Veliko Selo' ? 'selected' : '' }}>Veliko Selo</option>
+                                    <option value="Kovilovo" {{ old('neighborhood') == 'Kovilovo' ? 'selected' : '' }}>Kovilovo</option>
+                                    <option value="Resnik" {{ old('neighborhood') == 'Resnik' ? 'selected' : '' }}>Resnik</option>
+                                    <option value="Mirijevo" {{ old('neighborhood') == 'Mirijevo' ? 'selected' : '' }}>Mirijevo</option>
+                                    <option value="Višnjica" {{ old('neighborhood') == 'Višnjica' ? 'selected' : '' }}>Višnjica</option>
+                                    <option value="Sremčica" {{ old('neighborhood') == 'Sremčica' ? 'selected' : '' }}>Sremčica</option>
+                                    <option value="Železnik" {{ old('neighborhood') == 'Železnik' ? 'selected' : '' }}>Železnik</option>
+                                    <option value="Skojevsko naselje" {{ old('neighborhood') == 'Skojevsko naselje' ? 'selected' : '' }}>Skojevsko naselje</option>
+                                    <option value="Banovo brdo" {{ old('neighborhood') == 'Banovo brdo' ? 'selected' : '' }}>Banovo brdo</option>
+                                    <option value="Senjak" {{ old('neighborhood') == 'Senjak' ? 'selected' : '' }}>Senjak</option>
+                                    <option value="Dedinje" {{ old('neighborhood') == 'Dedinje' ? 'selected' : '' }}>Dedinje</option>
+                                    <option value="Dorćol" {{ old('neighborhood') == 'Dorćol' ? 'selected' : '' }}>Dorćol</option>
+                                    <option value="Medaković" {{ old('neighborhood') == 'Medaković' ? 'selected' : '' }}>Medaković</option>
+                                    <option value="Konjarnik" {{ old('neighborhood') == 'Konjarnik' ? 'selected' : '' }}>Konjarnik</option>
+                                    <option value="Braće Jerković" {{ old('neighborhood') == 'Braće Jerković' ? 'selected' : '' }}>Braće Jerković</option>
+                                    <option value="Jajinci" {{ old('neighborhood') == 'Jajinci' ? 'selected' : '' }}>Jajinci</option>
+                                    <option value="Kumodraž" {{ old('neighborhood') == 'Kumodraž' ? 'selected' : '' }}>Kumodraž</option>
+                                </select>
                                 @error('neighborhood')
                                     <p class="mt-2 text-sm text-red-600 flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -169,22 +212,8 @@
                                 @enderror
                             </div>
 
-                            <div>
-                                <label for="city" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Grad
-                                </label>
-                                <input id="city" name="city" type="text" required 
-                                       class="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 @error('city') border-red-500 focus:ring-red-500 focus:border-red-500 @enderror" 
-                                       placeholder="Beograd" value="{{ old('city') }}">
-                                @error('city')
-                                    <p class="mt-2 text-sm text-red-600 flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                        </svg>
-                                        {{ $message }}
-                                    </p>
-                                @enderror
-                            </div>
+                            <!-- City Field (Hidden - always Beograd) -->
+                            <input type="hidden" name="city" value="Beograd">
 
                             <div>
                                 <label for="postal_code" class="block text-sm font-semibold text-gray-700 mb-2">

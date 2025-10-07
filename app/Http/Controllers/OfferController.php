@@ -24,8 +24,8 @@ class OfferController extends Controller
         // Start with base query
         $query = Offer::with('businessUser')
             ->whereHas('businessUser', function($q) use ($user) {
-                $q->where('neighborhood', $user->neighborhood)
-                  ->where('city', $user->city);
+                $q->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
+                  ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
             })
             ->active()
             ->valid();
@@ -115,7 +115,7 @@ class OfferController extends Controller
         $businessUser = $offer->businessUser;
         
         // Check if offer is from same neighborhood and city
-        if ($user->neighborhood !== $businessUser->neighborhood || $user->city !== $businessUser->city) {
+        if (strcasecmp($user->neighborhood, $businessUser->neighborhood) !== 0 || strcasecmp($user->city, $businessUser->city) !== 0) {
             abort(403, 'Nemate dozvolu da vidite ovu ponudu. Ponuda je iz drugog dela grada.');
         }
         

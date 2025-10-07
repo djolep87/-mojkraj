@@ -25,8 +25,8 @@ Route::get('/', function () {
             $q->where('user_id', $user->id)
               // OR show news from same neighborhood and city
               ->orWhereHas('user', function($subQ) use ($user) {
-                  $subQ->where('neighborhood', $user->neighborhood)
-                       ->where('city', $user->city);
+                  $subQ->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
+                       ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
               });
         });
     }
@@ -73,12 +73,21 @@ Route::get('/o-nama', function () {
 
 // Pets info page (public)
 Route::get('/kucni-ljubimci', function () {
-    // Get latest 6 pet posts for preview
-    $latestPets = \App\Models\PetPost::with(['user'])
-        ->active()
-        ->latest()
-        ->limit(6)
-        ->get();
+    $latestPets = collect(); // Default empty collection
+    
+    // Only show latest pets if user is logged in and from same area
+    if (auth()->check()) {
+        $user = auth()->user();
+        $latestPets = \App\Models\PetPost::with(['user'])
+            ->active()
+            ->whereHas('user', function($q) use ($user) {
+                $q->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
+                  ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
+            })
+            ->latest()
+            ->limit(6)
+            ->get();
+    }
     
     return view('pets-info', compact('latestPets'));
 })->name('pets.info');
@@ -131,7 +140,14 @@ Route::middleware('auth:web')->group(function () {
 // News routes (all protected)
 Route::middleware('auth:web')->group(function () {
     Route::get('/vesti', [NewsController::class, 'index'])->name('news.index');
+    Route::get('/vesti/create', [NewsController::class, 'create'])->name('news.create');
+    Route::post('/vesti', [NewsController::class, 'store'])->name('news.store');
     Route::get('/vesti/{news}', [NewsController::class, 'show'])->name('news.show');
+    Route::get('/vesti/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
+    Route::put('/vesti/{news}', [NewsController::class, 'update'])->name('news.update');
+    Route::delete('/vesti/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
+    Route::post('/vesti/{news}/like', [NewsController::class, 'like'])->name('news.like');
+    Route::post('/vesti/{news}/komentar', [NewsController::class, 'comment'])->name('news.comment');
 });
 
 // Offers routes (all protected)
@@ -140,16 +156,6 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/ponude/{offer}', [OfferController::class, 'show'])->name('offers.show');
 });
 
-// News routes for regular users (protected)
-Route::middleware('auth')->group(function () {
-    Route::get('/vesti/create', [NewsController::class, 'create'])->name('news.create');
-    Route::post('/vesti', [NewsController::class, 'store'])->name('news.store');
-    Route::get('/vesti/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
-    Route::put('/vesti/{news}', [NewsController::class, 'update'])->name('news.update');
-    Route::delete('/vesti/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
-    Route::post('/vesti/{news}/like', [NewsController::class, 'like'])->name('news.like');
-    Route::post('/vesti/{news}/komentar', [NewsController::class, 'comment'])->name('news.comment');
-});
 
 
 // Dashboard (protected routes)

@@ -19,7 +19,8 @@ class BusinessRegisterController extends Controller
 
     public function register(Request $request)
     {
-        $request->validate([
+        try {
+            $request->validate([
             'company_name' => ['required', 'string', 'max:255'],
             'contact_person' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:business_users'],
@@ -28,7 +29,7 @@ class BusinessRegisterController extends Controller
             'business_type' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'neighborhood' => ['required', 'string', 'max:255'],
-            'city' => ['required', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:10'],
             'description' => ['nullable', 'string', 'max:1000'],
             'website' => ['nullable', 'url', 'max:255'],
@@ -50,7 +51,7 @@ class BusinessRegisterController extends Controller
             'business_type' => $request->business_type,
             'address' => $request->address,
             'neighborhood' => $request->neighborhood,
-            'city' => $request->city,
+            'city' => $request->city ?? 'Beograd',
             'postal_code' => $request->postal_code,
             'description' => $request->description,
             'website' => $request->website,
@@ -60,5 +61,9 @@ class BusinessRegisterController extends Controller
         Auth::guard('business')->login($businessUser);
 
         return redirect()->route('business.dashboard')->with('success', 'Uspešno ste se registrovali kao pravno lice!');
+        
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Greška prilikom registracije: ' . $e->getMessage()])->withInput();
+        }
     }
 }
