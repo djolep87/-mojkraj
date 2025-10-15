@@ -19,6 +19,7 @@ class News extends Model
         'category',
         'is_published',
         'is_featured',
+        'is_anonymous',
         'views',
         'likes',
         'city',
@@ -32,6 +33,7 @@ class News extends Model
             'videos' => 'array',
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
+            'is_anonymous' => 'boolean',
             'views' => 'integer',
             'likes' => 'integer',
         ];

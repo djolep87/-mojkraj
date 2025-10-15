@@ -65,19 +65,6 @@
                 <!-- Title -->
                 <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ $news->title }}</h1>
 
-                <!-- Author Info -->
-                <div class="flex items-center mb-6">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center mr-3">
-                        <span class="text-white font-semibold text-sm">{{ substr($news->user->name, 0, 1) }}</span>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600">Autor</p>
-                        <p class="font-medium text-gray-900">{{ $news->user->name }}</p>
-                    </div>
-                    <div class="ml-auto text-sm text-gray-500">
-                        {{ $news->created_at->format('d.m.Y H:i') }}
-                    </div>
-                </div>
 
                 <!-- Content -->
                 <div class="prose max-w-none mb-8">
@@ -113,19 +100,8 @@
                     </div>
                 @endif
 
-                <!-- Author and Stats -->
+                <!-- Stats and Author -->
                 <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-lg font-semibold">
-                            {{ substr($news->user->name, 0, 1) }}
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-lg font-semibold text-gray-900">{{ $news->user->name }}</p>
-                            <p class="text-sm text-gray-500">{{ $news->user->neighborhood }}, {{ $news->user->city }}</p>
-                            <p class="text-sm text-gray-500">{{ $news->created_at->format('d.m.Y H:i') }}</p>
-                        </div>
-                    </div>
-                    
                     <div class="flex items-center space-x-6">
                         <button id="like-btn" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors duration-200" data-news-id="{{ $news->id }}">
                             <svg class="w-6 h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,6 +116,32 @@
                             <span>{{ $news->comments->count() }} komentara</span>
                         </div>
                     </div>
+                    
+                    <!-- Author Info -->
+                    <div class="flex items-center space-x-3">
+                        @if($news->is_anonymous)
+                            <div class="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm font-medium text-gray-700">Anonimni korisnik</span>
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        @else
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-bold">{{ substr($news->user->name, 0, 1) }}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm font-medium text-gray-700">{{ $news->user->name }}</span>
+                                <span class="text-xs text-gray-500">{{ $news->user->neighborhood }}, {{ $news->user->city }}</span>
+                            </div>
+                        @endif
+                        <span class="text-sm text-gray-500">{{ $news->created_at->format('d.m.Y H:i') }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,14 +153,33 @@
             <!-- Add Comment Form -->
             <form id="comment-form" class="mb-8">
                 @csrf
-                <div class="flex space-x-4">
-                    <div class="flex-1">
-                        <textarea id="comment-content" name="content" rows="3" placeholder="Napišite komentar..." required
-                                  class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                <div class="space-y-4">
+                    <div class="flex space-x-4">
+                        <div class="flex-1">
+                            <textarea id="comment-content" name="content" rows="3" placeholder="Napišite komentar..." required
+                                      class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                        <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors duration-200 self-end">
+                            Pošalji
+                        </button>
                     </div>
-                    <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors duration-200 self-end">
-                        Pošalji
-                    </button>
+                    
+                    <!-- Anonymous Option -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h4 class="text-sm font-medium text-gray-900 mb-1">Anonimni komentar</h4>
+                                <p class="text-sm text-gray-600">Ako uključite ovu opciju, vaše ime neće biti prikazano uz komentar</p>
+                            </div>
+                            <div class="ml-4">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="comment-is-anonymous" name="is_anonymous" value="1" 
+                                           class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </form>
 
@@ -166,13 +187,30 @@
             <div id="comments-list" class="space-y-6">
                 @foreach($news->comments as $comment)
                     <div class="flex space-x-4">
-                        <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
-                            {{ substr($comment->user->name, 0, 1) }}
-                        </div>
+                        @if($comment->is_anonymous)
+                            <div class="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full flex items-center justify-center text-white font-semibold">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        @else
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
+                                {{ substr($comment->user->name, 0, 1) }}
+                            </div>
+                        @endif
                         <div class="flex-1">
                             <div class="bg-gray-50 rounded-lg p-4">
                                 <div class="flex items-center justify-between mb-2">
-                                    <h4 class="font-semibold text-gray-900">{{ $comment->user->name }}</h4>
+                                    @if($comment->is_anonymous)
+                                        <div class="flex items-center space-x-2">
+                                            <h4 class="font-semibold text-gray-900">Anonimni korisnik</h4>
+                                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                    @else
+                                        <h4 class="font-semibold text-gray-900">{{ $comment->user->name }}</h4>
+                                    @endif
                                     <span class="text-sm text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
                                 </div>
                                 <p class="text-gray-700">{{ $comment->content }}</p>
@@ -200,13 +238,30 @@
                                 <div class="mt-4 ml-6 space-y-3">
                                     @foreach($comment->replies as $reply)
                                         <div class="flex space-x-3">
-                                            <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                                {{ substr($reply->user->name, 0, 1) }}
-                                            </div>
+                                            @if($reply->is_anonymous)
+                                                <div class="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                            @else
+                                                <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                                    {{ substr($reply->user->name, 0, 1) }}
+                                                </div>
+                                            @endif
                                             <div class="flex-1">
                                                 <div class="bg-gray-50 rounded-lg p-3">
                                                     <div class="flex items-center justify-between mb-1">
-                                                        <h5 class="font-medium text-gray-900 text-sm">{{ $reply->user->name }}</h5>
+                                                        @if($reply->is_anonymous)
+                                                            <div class="flex items-center space-x-1">
+                                                                <h5 class="font-medium text-gray-900 text-sm">Anonimni korisnik</h5>
+                                                                <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                            </div>
+                                                        @else
+                                                            <h5 class="font-medium text-gray-900 text-sm">{{ $reply->user->name }}</h5>
+                                                        @endif
                                                         <span class="text-xs text-gray-500">{{ $reply->created_at->diffForHumans() }}</span>
                                                     </div>
                                                     <p class="text-gray-700 text-sm">{{ $reply->content }}</p>
@@ -275,6 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         const content = document.getElementById('comment-content').value;
+        const isAnonymous = document.getElementById('comment-is-anonymous').checked;
         const newsId = {{ $news->id }};
         
         // Check if content is empty
@@ -289,7 +345,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ content: content })
+            body: JSON.stringify({ 
+                content: content,
+                is_anonymous: isAnonymous
+            })
         })
         .then(response => {
             if (!response.ok) {
@@ -299,25 +358,53 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             // Add comment to list
-            const commentHtml = `
-                <div class="flex space-x-4">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
-                        {{ substr(auth()->user()->name, 0, 1) }}
-                    </div>
-                    <div class="flex-1">
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <h4 class="font-semibold text-gray-900">{{ auth()->user()->name }}</h4>
-                                <span class="text-sm text-gray-500">Sada</span>
+            let commentHtml;
+            if (isAnonymous) {
+                commentHtml = `
+                    <div class="flex space-x-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full flex items-center justify-center text-white font-semibold">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center space-x-2">
+                                        <h4 class="font-semibold text-gray-900">Anonimni korisnik</h4>
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <span class="text-sm text-gray-500">Sada</span>
+                                </div>
+                                <p class="text-gray-700">${data.comment.content}</p>
                             </div>
-                            <p class="text-gray-700">${data.comment.content}</p>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                commentHtml = `
+                    <div class="flex space-x-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
+                            {{ substr(auth()->user()->name, 0, 1) }}
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="font-semibold text-gray-900">{{ auth()->user()->name }}</h4>
+                                    <span class="text-sm text-gray-500">Sada</span>
+                                </div>
+                                <p class="text-gray-700">${data.comment.content}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
             
             commentsList.insertAdjacentHTML('afterbegin', commentHtml);
             document.getElementById('comment-content').value = '';
+            document.getElementById('comment-is-anonymous').checked = false;
             
             // Update comments count
             const commentsCountElement = document.querySelector('.flex.items-center.space-x-6 .flex.items-center.space-x-2.text-gray-500 span');

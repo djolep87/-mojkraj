@@ -1,3 +1,11 @@
+@php
+    // Check authentication status
+    $isRegularUser = auth()->check();
+    $isBusinessUser = auth('business')->check();
+    $currentUser = auth()->user();
+    $currentBusinessUser = auth('business')->user();
+@endphp
+
 <!DOCTYPE html>
 <html lang="sr">
 <head>

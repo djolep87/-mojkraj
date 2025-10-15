@@ -1,4 +1,10 @@
-@extends('layouts.user')
+@php
+    // Determine which layout to use based on user type
+    $isBusinessUser = auth('business')->check();
+    $layoutName = $isBusinessUser ? 'layouts.business' : 'layouts.app';
+@endphp
+
+@extends($layoutName)
 
 @section('title', $offer->title . ' - Moj Kraj')
 
@@ -16,10 +22,10 @@
 
     <!-- Offer Details -->
     <div class="bg-white shadow rounded-lg overflow-hidden">
-        <!-- Image -->
-        @if($offer->image)
+        <!-- Images -->
+        @if($offer->images && count($offer->images) > 0)
             <div class="h-64 bg-gray-200">
-                <img src="{{ Storage::url($offer->image) }}" alt="{{ $offer->title }}" 
+                <img src="{{ Storage::url($offer->images[0]) }}" alt="{{ $offer->title }}" 
                      class="w-full h-full object-cover">
             </div>
         @else
@@ -48,12 +54,29 @@
                 </div>
             </div>
 
+            <!-- Offer Type -->
+            <div class="mb-4">
+                <span class="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">
+                    {{ ucfirst(str_replace('_', ' ', $offer->offer_type)) }}
+                </span>
+            </div>
+
             <!-- Price -->
-            @if($offer->price)
-                <div class="mb-4">
-                    <span class="text-2xl font-bold text-green-600">{{ number_format($offer->price, 0, ',', '.') }} RSD</span>
-                </div>
-            @endif
+            <div class="mb-4">
+                @if($offer->discount_price)
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl font-bold text-green-600">{{ number_format($offer->discount_price, 0, ',', '.') }} RSD</span>
+                        @if($offer->original_price)
+                            <span class="text-lg text-gray-500 line-through">{{ number_format($offer->original_price, 0, ',', '.') }} RSD</span>
+                        @endif
+                    </div>
+                    @if($offer->discount_percentage)
+                        <p class="text-sm text-red-600 font-medium">{{ $offer->discount_percentage }} popusta!</p>
+                    @endif
+                @elseif($offer->original_price)
+                    <span class="text-2xl font-bold text-green-600">{{ number_format($offer->original_price, 0, ',', '.') }} RSD</span>
+                @endif
+            </div>
 
             <!-- Description -->
             <div class="mb-6">
@@ -61,22 +84,70 @@
                 <p class="text-gray-700 leading-relaxed">{{ $offer->description }}</p>
             </div>
 
-            <!-- Contact Info -->
+            <!-- Business Contact Info -->
             <div class="mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Kontakt informacije</h3>
-                <p class="text-gray-700">{{ $offer->contact_info }}</p>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-gray-700"><strong>Kompanija:</strong> {{ $offer->businessUser->company_name }}</p>
+                    <p class="text-gray-700"><strong>Kontakt osoba:</strong> {{ $offer->businessUser->contact_person }}</p>
+                    <p class="text-gray-700"><strong>Telefon:</strong> {{ $offer->businessUser->phone }}</p>
+                    <p class="text-gray-700"><strong>Email:</strong> {{ $offer->businessUser->email }}</p>
+                    @if($offer->businessUser->address)
+                        <p class="text-gray-700"><strong>Adresa:</strong> {{ $offer->businessUser->address }}, {{ $offer->businessUser->neighborhood }}, {{ $offer->businessUser->city }}</p>
+                    @endif
+                </div>
             </div>
 
-            <!-- Valid Until -->
-            @if($offer->valid_until)
+            <!-- Validity Period -->
+            @if($offer->valid_from || $offer->valid_until)
                 <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Važi do</h3>
-                    <p class="text-gray-700">{{ \Carbon\Carbon::parse($offer->valid_until)->format('d.m.Y') }}</p>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Period važenja</h3>
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        @if($offer->valid_from)
+                            <p class="text-gray-700"><strong>Važi od:</strong> {{ \Carbon\Carbon::parse($offer->valid_from)->format('d.m.Y') }}</p>
+                        @endif
+                        @if($offer->valid_until)
+                            <p class="text-gray-700"><strong>Važi do:</strong> {{ \Carbon\Carbon::parse($offer->valid_until)->format('d.m.Y') }}</p>
+                        @endif
+                        @if($offer->valid_time_from || $offer->valid_time_until)
+                            <p class="text-gray-700">
+                                <strong>Vreme:</strong> 
+                                @if($offer->valid_time_from)
+                                    {{ $offer->valid_time_from }}
+                                @endif
+                                @if($offer->valid_time_from && $offer->valid_time_until)
+                                    - 
+                                @endif
+                                @if($offer->valid_time_until)
+                                    {{ $offer->valid_time_until }}
+                                @endif
+                            </p>
+                        @endif
+                    </div>
                 </div>
             @endif
 
+            <!-- Statistics -->
+            <div class="mb-6">
+                <div class="flex items-center space-x-6 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        {{ $offer->views }} pregleda
+                    </span>
+                    <span class="flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        {{ $offer->likes }} lajkova
+                    </span>
+                </div>
+            </div>
+
             <!-- Created At -->
-            <div class="text-sm text-gray-500">
+            <div class="text-sm text-gray-500 border-t pt-4">
                 Objavljeno: {{ $offer->created_at->format('d.m.Y H:i') }}
             </div>
         </div>

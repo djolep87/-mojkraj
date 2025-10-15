@@ -6,60 +6,58 @@ use App\Models\Business;
 use App\Models\BusinessUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class BusinessController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request)
     {
-        // Check if user is logged in
-        if (!Auth::check()) {
+        // Check if user is logged in (either regular user or business user)
+        if (!Auth::check() && !Auth::guard('business')->check()) {
             return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli biznise.');
         }
         
+        // Get user location - support both regular users and business users
         $user = Auth::user();
+        $businessUser = Auth::guard('business')->user();
         
-        // Start with base query
-        $query = Business::with('businessUser')
-            ->whereHas('businessUser', function($q) use ($user) {
-                $q->where('neighborhood', $user->neighborhood)
-                  ->where('city', $user->city);
-            })
-            ->active()
-            ->valid();
+        $neighborhood = null;
+        $city = null;
+        
+        if ($user) {
+            // Regular user
+            $neighborhood = $user->neighborhood;
+            $city = $user->city;
+        } elseif ($businessUser) {
+            // Business user
+            $neighborhood = $businessUser->neighborhood;
+            $city = $businessUser->city;
+        }
+        
+        // Start with base query - show business users from same neighborhood and city
+        $query = BusinessUser::where('neighborhood', $neighborhood)
+            ->where('city', $city)
+            ->where('is_active', true);
         
         // Apply search filter
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('businessUser', function($subQuery) use ($search) {
-                      $subQuery->where('company_name', 'like', "%{$search}%")
-                               ->orWhere('contact_person', 'like', "%{$search}%");
-                  });
+                $q->where('company_name', 'like', "%{$search}%")
+                  ->orWhere('contact_person', 'like', "%{$search}%")
+                  ->orWhere('business_type', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
             });
         }
         
-        // Apply type filter
+        // Apply business type filter
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-        
-        // Apply price range filter
-        if ($request->filled('price_min')) {
-            $query->where('price', '>=', $request->price_min);
-        }
-        if ($request->filled('price_max')) {
-            $query->where('price', '<=', $request->price_max);
-        }
-        
-        // Apply featured filter
-        if ($request->filled('featured')) {
-            $query->where('is_featured', true);
+            $query->where('business_type', $request->type);
         }
         
         // Apply sorting
-        $sortBy = $request->get('sort', 'featured');
+        $sortBy = $request->get('sort', 'newest');
         switch ($sortBy) {
             case 'newest':
                 $query->orderBy('created_at', 'desc');
@@ -67,57 +65,75 @@ class BusinessController extends Controller
             case 'oldest':
                 $query->orderBy('created_at', 'asc');
                 break;
-            case 'price_low':
-                $query->orderBy('price', 'asc');
+            case 'name_asc':
+                $query->orderBy('company_name', 'asc');
                 break;
-            case 'price_high':
-                $query->orderBy('price', 'desc');
+            case 'name_desc':
+                $query->orderBy('company_name', 'desc');
                 break;
-            case 'views':
-                $query->orderBy('views', 'desc');
+            case 'type':
+                $query->orderBy('business_type', 'asc');
                 break;
-            case 'featured':
             default:
-                $query->orderBy('is_featured', 'desc')->orderBy('created_at', 'desc');
+                $query->orderBy('created_at', 'desc');
                 break;
         }
         
         $businesses = $query->paginate(24)->withQueryString();
         
         // Get filter options
-        $types = Business::distinct()->pluck('type')->filter();
-        $priceRange = Business::selectRaw('MIN(price) as min_price, MAX(price) as max_price')->first();
+        $types = BusinessUser::distinct()->pluck('business_type')->filter();
         
-        return view('businesses.index', compact('businesses', 'user', 'types', 'priceRange'));
+        // Pass the current user info to view
+        $currentUser = $user ?: $businessUser;
+        
+        return view('businesses.index', compact('businesses', 'currentUser', 'types'));
     }
 
-    public function show(Business $business)
+    public function show(BusinessUser $businessUser)
     {
-        // Check if user is logged in
-        if (!Auth::check()) {
+        // Check if user is logged in (either regular user or business user)
+        if (!Auth::check() && !Auth::guard('business')->check()) {
             return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli biznise.');
         }
         
+        // Get user location - support both regular users and business users
         $user = Auth::user();
-        $businessUser = $business->businessUser;
+        $currentBusinessUser = Auth::guard('business')->user();
+        
+        $neighborhood = null;
+        $city = null;
+        
+        if ($user) {
+            // Regular user
+            $neighborhood = $user->neighborhood;
+            $city = $user->city;
+        } elseif ($currentBusinessUser) {
+            // Business user
+            $neighborhood = $currentBusinessUser->neighborhood;
+            $city = $currentBusinessUser->city;
+        }
         
         // Check if business is from same neighborhood and city
-        if (strcasecmp($user->neighborhood, $businessUser->neighborhood) !== 0 || strcasecmp($user->city, $businessUser->city) !== 0) {
+        if (strcasecmp($neighborhood, $businessUser->neighborhood) !== 0 || strcasecmp($city, $businessUser->city) !== 0) {
             abort(403, 'Nemate dozvolu da vidite ovaj biznis. Biznis je iz drugog dela grada.');
         }
         
-        $business->increment('views');
+        // Increment views (if views field exists)
+        if (isset($businessUser->views)) {
+            $businessUser->increment('views');
+        }
         
-        return view('businesses.show', compact('business'));
+        return view('businesses.show', compact('businessUser'));
     }
 
     public function dashboard()
     {
         $businessUser = Auth::guard('business')->user();
-        $businesses = $businessUser->businesses()->orderBy('created_at', 'desc')->paginate(24);
-        $offers = $businessUser->offers()->orderBy('created_at', 'desc')->paginate(24);
+        $businesses = Business::where('business_user_id', $businessUser->id)->orderBy('created_at', 'desc')->paginate(24);
+        $offers = \App\Models\Offer::where('business_user_id', $businessUser->id)->orderBy('created_at', 'desc')->paginate(24);
         
-        return view('business.dashboard', compact('businesses', 'offers'));
+        return view('business.dashboard', compact('businesses', 'offers', 'businessUser'));
     }
 
     public function create()
@@ -141,7 +157,8 @@ class BusinessController extends Controller
 
         $businessUser = Auth::guard('business')->user();
 
-        $business = $businessUser->businesses()->create([
+        $business = Business::create([
+            'business_user_id' => $businessUser->id,
             'title' => $request->title,
             'description' => $request->description,
             'type' => $request->type,

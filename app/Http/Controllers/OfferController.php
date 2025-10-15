@@ -14,18 +14,33 @@ class OfferController extends Controller
 
     public function index(Request $request)
     {
-        // Check if user is logged in
-        if (!Auth::check()) {
+        // Check if user is logged in (either regular user or business user)
+        if (!Auth::check() && !Auth::guard('business')->check()) {
             return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli ponude.');
         }
         
+        // Get user location - support both regular users and business users
         $user = Auth::user();
+        $businessUser = Auth::guard('business')->user();
         
-        // Start with base query
+        $neighborhood = null;
+        $city = null;
+        
+        if ($user) {
+            // Regular user
+            $neighborhood = $user->neighborhood;
+            $city = $user->city;
+        } elseif ($businessUser) {
+            // Business user
+            $neighborhood = $businessUser->neighborhood;
+            $city = $businessUser->city;
+        }
+        
+        // Start with base query - show offers from same neighborhood and city
         $query = Offer::with('businessUser')
-            ->whereHas('businessUser', function($q) use ($user) {
-                $q->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
-                  ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
+            ->whereHas('businessUser', function($q) use ($neighborhood, $city) {
+                $q->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$neighborhood])
+                  ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$city]);
             })
             ->active()
             ->valid();
@@ -101,21 +116,39 @@ class OfferController extends Controller
             $businessUser = \App\Models\BusinessUser::find($request->business_user);
         }
 
-        return view('offers.index', compact('offers', 'user', 'types', 'priceRange', 'businessUser'));
+        // Pass the current user info to view
+        $currentUser = $user ?: $businessUser;
+
+        return view('offers.index', compact('offers', 'currentUser', 'types', 'priceRange', 'businessUser'));
     }
 
     public function show(Offer $offer)
     {
-        // Check if user is logged in
-        if (!Auth::check()) {
+        // Check if user is logged in (either regular user or business user)
+        if (!Auth::check() && !Auth::guard('business')->check()) {
             return redirect()->route('login')->with('error', 'Morate biti ulogovani da biste videli ponude.');
         }
         
+        // Get user location - support both regular users and business users
         $user = Auth::user();
-        $businessUser = $offer->businessUser;
+        $businessUser = Auth::guard('business')->user();
+        $offerBusinessUser = $offer->businessUser;
+        
+        $neighborhood = null;
+        $city = null;
+        
+        if ($user) {
+            // Regular user
+            $neighborhood = $user->neighborhood;
+            $city = $user->city;
+        } elseif ($businessUser) {
+            // Business user
+            $neighborhood = $businessUser->neighborhood;
+            $city = $businessUser->city;
+        }
         
         // Check if offer is from same neighborhood and city
-        if (strcasecmp($user->neighborhood, $businessUser->neighborhood) !== 0 || strcasecmp($user->city, $businessUser->city) !== 0) {
+        if (strcasecmp($neighborhood, $offerBusinessUser->neighborhood) !== 0 || strcasecmp($city, $offerBusinessUser->city) !== 0) {
             abort(403, 'Nemate dozvolu da vidite ovu ponudu. Ponuda je iz drugog dela grada.');
         }
         
@@ -148,6 +181,11 @@ class OfferController extends Controller
 
         $businessUser = Auth::guard('business')->user();
         
+        // Debug: Check if user is authenticated
+        if (!$businessUser) {
+            return redirect()->back()->with('error', 'Morate biti prijavljeni kao biznis korisnik da biste kreirali ponudu.');
+        }
+        
         $images = [];
         if ($request->hasFile('images')) {
             // Ensure images directory exists
@@ -158,7 +196,8 @@ class OfferController extends Controller
             }
         }
 
-        $offer = $businessUser->offers()->create([
+        $offer = Offer::create([
+            'business_user_id' => $businessUser->id,
             'title' => $request->title,
             'description' => $request->description,
             'offer_type' => $request->offer_type,

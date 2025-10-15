@@ -89,6 +89,7 @@ class NewsController extends Controller
             'category' => ['required', 'string', 'in:opšte,dešavanja,bezbednost,zdravstvo,sport,kultura,ostalo'],
             'images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'videos.*' => ['nullable', 'file', 'mimes:mp4,avi,mov,wmv', 'max:10240'],
+            'is_anonymous' => ['boolean'],
         ]);
 
         $user = Auth::user();
@@ -121,6 +122,7 @@ class NewsController extends Controller
             'images' => $images,
             'videos' => $videos,
             'is_published' => true,
+            'is_anonymous' => $request->boolean('is_anonymous'),
             'city' => $user->city,
             'neighborhood' => $user->neighborhood,
         ]);
@@ -147,6 +149,7 @@ class NewsController extends Controller
             'images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'videos.*' => ['nullable', 'file', 'mimes:mp4,avi,mov,wmv', 'max:10240'],
             'is_published' => ['boolean'],
+            'is_anonymous' => ['boolean'],
         ]);
 
         $images = $news->images ?? [];
@@ -193,6 +196,7 @@ class NewsController extends Controller
             'images' => $images,
             'videos' => $videos,
             'is_published' => $request->boolean('is_published'),
+            'is_anonymous' => $request->boolean('is_anonymous'),
         ]);
 
         return redirect()->route('news.show', $news)->with('success', 'Vest je uspešno ažurirana!');
@@ -254,7 +258,8 @@ class NewsController extends Controller
     {
         $request->validate([
             'content' => 'required|string|max:1000',
-            'parent_id' => 'nullable|exists:news_comments,id'
+            'parent_id' => 'nullable|exists:news_comments,id',
+            'is_anonymous' => 'boolean'
         ]);
 
         $user = Auth::user();
@@ -264,6 +269,7 @@ class NewsController extends Controller
             'user_id' => $user->id,
             'parent_id' => $request->parent_id,
             'content' => $request->content,
+            'is_anonymous' => $request->boolean('is_anonymous'),
         ]);
 
         $comment->load(['user', 'replies.user']);

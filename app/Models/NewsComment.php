@@ -14,6 +14,7 @@ class NewsComment extends Model
         'user_id',
         'parent_id',
         'content',
+        'is_anonymous',
     ];
 
     public function news()
@@ -34,5 +35,12 @@ class NewsComment extends Model
     public function replies()
     {
         return $this->hasMany(NewsComment::class, 'parent_id')->orderBy('created_at', 'desc');
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'is_anonymous' => 'boolean',
+        ];
     }
 }
