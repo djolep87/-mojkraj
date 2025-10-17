@@ -165,7 +165,7 @@
                                     <h4 class="font-semibold text-gray-900">{{ $comment->user->name }}</h4>
                                     <span class="text-sm text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
                                 </div>
-                                <p class="text-gray-700">{{ $comment->content }}</p>
+                                <p class="text-gray-700 break-words overflow-wrap-anywhere">{{ $comment->content }}</p>
                             </div>
                             
                             <!-- Reply Button -->
@@ -199,7 +199,7 @@
                                                         <h5 class="font-medium text-gray-900 text-sm">{{ $reply->user->name }}</h5>
                                                         <span class="text-xs text-gray-500">{{ $reply->created_at->diffForHumans() }}</span>
                                                     </div>
-                                                    <p class="text-gray-700 text-sm">{{ $reply->content }}</p>
+                                                    <p class="text-gray-700 text-sm break-words overflow-wrap-anywhere">{{ $reply->content }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <h4 class="font-semibold text-gray-900">{{ auth()->user()->name }}</h4>
                                 <span class="text-sm text-gray-500">Sada</span>
                             </div>
-                            <p class="text-gray-700">${data.comment.content}</p>
+                            <p class="text-gray-700 break-words overflow-wrap-anywhere">${data.comment.content}</p>
                         </div>
                     </div>
                 </div>
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <h5 class="font-medium text-gray-900 text-sm">{{ auth()->user()->name }}</h5>
                                     <span class="text-xs text-gray-500">Sada</span>
                                 </div>
-                                <p class="text-gray-700 text-sm">${data.comment.content}</p>
+                                <p class="text-gray-700 text-sm break-words overflow-wrap-anywhere">${data.comment.content}</p>
                             </div>
                         </div>
                     </div>
