@@ -30,7 +30,8 @@ class PetPost extends Model
         'is_urgent',
         'is_active',
         'likes_count',
-        'comments_count'
+        'comments_count',
+        'views'
     ];
 
     protected $casts = [
@@ -38,6 +39,7 @@ class PetPost extends Model
         'videos' => 'array',
         'is_urgent' => 'boolean',
         'is_active' => 'boolean',
+        'views' => 'integer',
     ];
 
     public function user(): BelongsTo
@@ -63,6 +65,16 @@ class PetPost extends Model
     public function isLikedBy(User $user): bool
     {
         return $this->likes()->where('user_id', $user->id)->exists();
+    }
+
+    public function getLikesAttribute()
+    {
+        return $this->likes_count;
+    }
+
+    public function incrementViews()
+    {
+        $this->increment('views');
     }
 
     public function scopeActive($query)

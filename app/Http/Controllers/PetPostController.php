@@ -119,11 +119,19 @@ class PetPostController extends Controller
             abort(403, 'Nemate pristup ovom postu. Možete videti samo postove iz vašeg dela grada.');
         }
         
+        $pet->incrementViews();
+        
         $pet->load(['user', 'comments' => function($query) {
             $query->orderBy('created_at', 'desc');
         }, 'comments.user', 'comments.replies.user', 'likes']);
         
-        return view('pets.show', compact('pet'));
+        // Check if current user liked this pet post
+        $isLiked = false;
+        if ($user) {
+            $isLiked = $pet->likes()->where('user_id', $user->id)->exists();
+        }
+        
+        return view('pets.show', compact('pet', 'isLiked'));
     }
 
     public function edit($id)
@@ -226,7 +234,7 @@ class PetPostController extends Controller
 
         return response()->json([
             'liked' => $liked,
-            'likes_count' => $pet->fresh()->likes_count
+            'likes' => $pet->fresh()->likes_count
         ]);
     }
 

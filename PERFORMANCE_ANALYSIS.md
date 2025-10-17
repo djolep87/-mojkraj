@@ -487,3 +487,5 @@ Failed requests: 0-1% ✅
 **Potrebna pomoć?** Mogu da kreiram sve potrebne skripte i migracije! 🚀
 
 
+
+

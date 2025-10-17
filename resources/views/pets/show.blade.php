@@ -1,6 +1,6 @@
 @extends('layouts.user')
 
-@section('title', $pet->title . ' - Kućni ljubimci')
+@section('title', $pet->title . ' - Moj Kraj')
 
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
@@ -11,7 +11,7 @@
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                Nazad na sve postove
+                Nazad na ljubimce
             </a>
         </div>
 
@@ -48,92 +48,18 @@
                             </span>
                         @endif
                     </div>
-                    
-                    @if(auth()->id() === $pet->user_id)
-                        <div class="flex items-center space-x-2">
-                            <a href="{{ route('pets.edit', $pet) }}" class="text-orange-600 hover:text-orange-700 p-2 rounded-lg hover:bg-orange-50">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </a>
-                            <form method="POST" action="{{ route('pets.destroy', $pet) }}" class="inline" onsubmit="return confirm('Da li ste sigurni da želite da obrišete ovaj post?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                    @endif
+                    <div class="text-sm text-gray-500">
+                        {{ $pet->created_at->format('d.m.Y H:i') }}
+                    </div>
                 </div>
 
                 <!-- Title -->
                 <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ $pet->title }}</h1>
 
-                <!-- Pet Info -->
-                <div class="flex flex-wrap items-center gap-4 mb-6 text-sm text-gray-600">
-                    @if($pet->pet_type)
-                        <span class="inline-flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                            {{ ucfirst($pet->pet_type) }}
-                        </span>
-                    @endif
-                    @if($pet->pet_breed)
-                        <span class="text-gray-400">•</span>
-                        <span>{{ $pet->pet_breed }}</span>
-                    @endif
-                    @if($pet->pet_age)
-                        <span class="text-gray-400">•</span>
-                        <span>{{ $pet->pet_age }}</span>
-                    @endif
-                    @if($pet->pet_gender)
-                        <span class="text-gray-400">•</span>
-                        <span>{{ ucfirst($pet->pet_gender) }}</span>
-                    @endif
-                </div>
-
                 <!-- Content -->
                 <div class="prose max-w-none mb-8">
                     <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ $pet->content }}</p>
                 </div>
-
-                <!-- Contact Information -->
-                @if($pet->contact_phone || $pet->contact_email || $pet->location)
-                    <div class="bg-gray-50 rounded-lg p-6 mb-8">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Kontakt informacije</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            @if($pet->contact_phone)
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 text-orange-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                    </svg>
-                                    <a href="tel:{{ $pet->contact_phone }}" class="text-orange-600 hover:text-orange-700">{{ $pet->contact_phone }}</a>
-                                </div>
-                            @endif
-                            @if($pet->contact_email)
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 text-orange-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                    </svg>
-                                    <a href="mailto:{{ $pet->contact_email }}" class="text-orange-600 hover:text-orange-700">{{ $pet->contact_email }}</a>
-                                </div>
-                            @endif
-                            @if($pet->location)
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 text-orange-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    <span>{{ $pet->location }}</span>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                @endif
 
                 <!-- Additional Images -->
                 @if($pet->images && count($pet->images) > 1)
@@ -164,32 +90,40 @@
                     </div>
                 @endif
 
-                <!-- Author and Stats -->
+                <!-- Stats and Author -->
                 <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full flex items-center justify-center text-white text-lg font-semibold">
-                            {{ substr($pet->user->name, 0, 1) }}
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-lg font-semibold text-gray-900">{{ $pet->user->name }}</p>
-                            <p class="text-sm text-gray-500">{{ $pet->user->neighborhood }}, {{ $pet->user->city }}</p>
-                            <p class="text-sm text-gray-500">{{ $pet->created_at->format('d.m.Y H:i') }}</p>
-                        </div>
-                    </div>
-                    
                     <div class="flex items-center space-x-6">
-                        <button id="like-btn" class="flex items-center space-x-2 text-gray-500 hover:text-orange-600 transition-colors duration-200" data-post-id="{{ $pet->id }}">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button id="like-btn" class="flex items-center space-x-2 text-gray-500 hover:text-orange-600 transition-colors duration-200" data-pet-id="{{ $pet->id }}">
+                            <svg class="w-6 h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span id="likes-count">{{ $pet->likes_count }}</span>
+                            <span id="likes-count">{{ $pet->likes }}</span>
                         </button>
+                        <div class="flex items-center space-x-2 text-gray-500">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>{{ $pet->views }} pregleda</span>
+                        </div>
                         <div class="flex items-center space-x-2 text-gray-500">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
-                            <span>{{ $pet->comments_count }} komentara</span>
+                            <span>{{ $pet->comments->count() }} komentara</span>
                         </div>
+                    </div>
+                    
+                    <!-- Author Info -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-600 rounded-full flex items-center justify-center">
+                            <span class="text-white text-lg font-bold">{{ substr($pet->user->name, 0, 1) }}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-gray-700">{{ $pet->user->name }}</span>
+                            <span class="text-xs text-gray-500">{{ $pet->user->neighborhood }}, {{ $pet->user->city }}</span>
+                        </div>
+                        <span class="text-sm text-gray-500">{{ $pet->created_at->format('d.m.Y H:i') }}</span>
                     </div>
                 </div>
             </div>
@@ -202,14 +136,16 @@
             <!-- Add Comment Form -->
             <form id="comment-form" class="mb-8">
                 @csrf
-                <div class="flex space-x-4">
-                    <div class="flex-1">
-                        <textarea id="comment-content" name="content" rows="3" placeholder="Napišite komentar..." required
-                                  class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"></textarea>
+                <div class="space-y-4">
+                    <div class="flex space-x-4">
+                        <div class="flex-1">
+                            <textarea id="comment-content" name="content" rows="3" placeholder="Napišite komentar..." required
+                                      class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"></textarea>
+                        </div>
+                        <button type="submit" class="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors duration-200 self-end">
+                            Pošalji
+                        </button>
                     </div>
-                    <button type="submit" class="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors duration-200 self-end">
-                        Pošalji
-                    </button>
                 </div>
             </form>
 
@@ -270,6 +206,16 @@
                         </div>
                     </div>
                 @endforeach
+                
+                @if($pet->comments->count() == 0)
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">Nema komentara</h3>
+                        <p class="mt-1 text-sm text-gray-500">Budite prvi koji će komentarisati ovaj post.</p>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -282,32 +228,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const likesCount = document.getElementById('likes-count');
     
     likeBtn.addEventListener('click', function() {
-        const postId = this.dataset.postId;
+        const petId = this.dataset.petId;
         
-        fetch(`/dashboard/kucni-ljubimci/${postId}/like`, {
+        fetch(`/dashboard/kucni-ljubimci/${petId}/like`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Content-Type': 'application/json',
-            },
+            }
         })
         .then(response => response.json())
         .then(data => {
-            likesCount.textContent = data.likes_count;
+            likesCount.textContent = data.likes;
             if (data.liked) {
-                likeBtn.classList.add('text-orange-600');
+                likeBtn.querySelector('svg').classList.add('fill-current');
             } else {
-                likeBtn.classList.remove('text-orange-600');
+                likeBtn.querySelector('svg').classList.remove('fill-current');
             }
         })
         .catch(error => console.error('Error:', error));
     });
 
-    // Comment functionality
-    const commentForm = document.getElementById('comment-form');
-    const commentsList = document.getElementById('comments-list');
-    
-    commentForm.addEventListener('submit', function(e) {
+    // Comment form submission
+    document.getElementById('comment-form').addEventListener('submit', function(e) {
         e.preventDefault();
         
         const content = document.getElementById('comment-content').value;
@@ -321,7 +264,12 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({ content: content })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             // Add comment to list
             const commentHtml = `
@@ -341,10 +289,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
+            const commentsList = document.getElementById('comments-list');
             commentsList.insertAdjacentHTML('afterbegin', commentHtml);
             document.getElementById('comment-content').value = '';
+            
+            // Update comments count
+            const commentsCountElement = document.querySelector('.flex.items-center.space-x-6 .flex.items-center.space-x-2.text-gray-500:last-child span');
+            if (commentsCountElement) {
+                const currentCount = parseInt(commentsCountElement.textContent.split(' ')[0]);
+                commentsCountElement.textContent = `${currentCount + 1} komentara`;
+            }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Došlo je do greške prilikom slanja komentara. Molimo pokušajte ponovo.');
+        });
     });
 
     // Reply functionality using event delegation
@@ -393,11 +352,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 
-                // Find the parent comment and add reply
                 const parentComment = e.target.closest('.flex.space-x-4');
                 let repliesContainer = parentComment.querySelector('.mt-4.ml-6');
                 
                 if (!repliesContainer) {
+                    // Create replies container if it doesn't exist
                     repliesContainer = document.createElement('div');
                     repliesContainer.className = 'mt-4 ml-6 space-y-3';
                     parentComment.querySelector('.flex-1').appendChild(repliesContainer);
