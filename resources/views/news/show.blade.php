@@ -92,45 +92,55 @@
                 @endif
 
                 <!-- Stats and Author -->
-                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                    <div class="flex items-center space-x-6">
+                <div class="pt-6 border-t border-gray-200">
+                    <!-- Stats Row - Left aligned on all devices -->
+                    <div class="flex items-center space-x-4 sm:space-x-6 mb-4">
                         <button id="like-btn" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors duration-200" data-news-id="{{ $news->id }}">
-                            <svg class="w-6 h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span id="likes-count">{{ $news->likes }}</span>
+                            <span id="likes-count" class="text-sm sm:text-base">{{ $news->likes }}</span>
                         </button>
                         <div class="flex items-center space-x-2 text-gray-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span class="text-sm sm:text-base">{{ $news->views }} pregleda</span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-gray-500">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
-                            <span>{{ $news->comments->count() }} komentara</span>
+                            <span class="text-sm sm:text-base">{{ $news->comments->count() }} komentara</span>
                         </div>
                     </div>
                     
-                    <!-- Author Info -->
-                    <div class="flex items-center space-x-3">
-                        @if($news->is_anonymous)
-                            <div class="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full flex items-center justify-center">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-sm font-medium text-gray-700">Anonimni korisnik</span>
-                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        @else
-                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-bold">{{ substr($news->user->name, 0, 1) }}</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-sm font-medium text-gray-700">{{ $news->user->name }}</span>
-                                <span class="text-xs text-gray-500">{{ $news->user->neighborhood }}, {{ $news->user->city }}</span>
-                            </div>
-                        @endif
+                    <!-- Author Info - Stacked on mobile, side by side on desktop -->
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                        <div class="flex items-center space-x-3">
+                            @if($news->is_anonymous)
+                                <div class="w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                                    <span class="text-sm font-medium text-gray-700">Anonimni korisnik</span>
+                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            @else
+                                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm font-bold">{{ substr($news->user->name, 0, 1) }}</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                                    <span class="text-sm font-medium text-gray-700">{{ $news->user->name }}</span>
+                                    <span class="text-xs text-gray-500">{{ $news->user->neighborhood }}, {{ $news->user->city }}</span>
+                                </div>
+                            @endif
+                        </div>
                         <span class="text-sm text-gray-500">{{ $news->created_at->format('d.m.Y H:i') }}</span>
                     </div>
                 </div>
@@ -145,12 +155,12 @@
             <form id="comment-form" class="mb-8">
                 @csrf
                 <div class="space-y-4">
-                    <div class="flex space-x-4">
+                    <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
                         <div class="flex-1">
-                            <textarea id="comment-content" name="content" rows="3" placeholder="Napišite komentar..." required
+                            <textarea id="comment-content" name="content" rows="4" placeholder="Napišite komentar..." required
                                       class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
                         </div>
-                        <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors duration-200 self-end">
+                        <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors duration-200 self-end sm:self-end">
                             Pošalji
                         </button>
                     </div>

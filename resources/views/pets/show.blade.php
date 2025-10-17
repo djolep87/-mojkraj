@@ -91,37 +91,40 @@
                 @endif
 
                 <!-- Stats and Author -->
-                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                    <div class="flex items-center space-x-6">
+                <div class="pt-6 border-t border-gray-200">
+                    <!-- Stats Row - Left aligned on all devices -->
+                    <div class="flex items-center space-x-4 sm:space-x-6 mb-4">
                         <button id="like-btn" class="flex items-center space-x-2 text-gray-500 hover:text-orange-600 transition-colors duration-200" data-pet-id="{{ $pet->id }}">
-                            <svg class="w-6 h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <span id="likes-count">{{ $pet->likes }}</span>
+                            <span id="likes-count" class="text-sm sm:text-base">{{ $pet->likes }}</span>
                         </button>
                         <div class="flex items-center space-x-2 text-gray-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            <span>{{ $pet->views }} pregleda</span>
+                            <span class="text-sm sm:text-base">{{ $pet->views }} pregleda</span>
                         </div>
                         <div class="flex items-center space-x-2 text-gray-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
-                            <span>{{ $pet->comments->count() }} komentara</span>
+                            <span class="text-sm sm:text-base">{{ $pet->comments->count() }} komentara</span>
                         </div>
                     </div>
                     
-                    <!-- Author Info -->
-                    <div class="flex items-center space-x-3">
-                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-600 rounded-full flex items-center justify-center">
-                            <span class="text-white text-lg font-bold">{{ substr($pet->user->name, 0, 1) }}</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-sm font-medium text-gray-700">{{ $pet->user->name }}</span>
-                            <span class="text-xs text-gray-500">{{ $pet->user->neighborhood }}, {{ $pet->user->city }}</span>
+                    <!-- Author Info - Stacked on mobile, side by side on desktop -->
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-pink-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-base sm:text-lg font-bold">{{ substr($pet->user->name, 0, 1) }}</span>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                                <span class="text-sm font-medium text-gray-700">{{ $pet->user->name }}</span>
+                                <span class="text-xs text-gray-500">{{ $pet->user->neighborhood }}, {{ $pet->user->city }}</span>
+                            </div>
                         </div>
                         <span class="text-sm text-gray-500">{{ $pet->created_at->format('d.m.Y H:i') }}</span>
                     </div>
@@ -137,12 +140,12 @@
             <form id="comment-form" class="mb-8">
                 @csrf
                 <div class="space-y-4">
-                    <div class="flex space-x-4">
+                    <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
                         <div class="flex-1">
-                            <textarea id="comment-content" name="content" rows="3" placeholder="Napišite komentar..." required
+                            <textarea id="comment-content" name="content" rows="4" placeholder="Napišite komentar..." required
                                       class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"></textarea>
                         </div>
-                        <button type="submit" class="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors duration-200 self-end">
+                        <button type="submit" class="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors duration-200 self-end sm:self-end">
                             Pošalji
                         </button>
                     </div>
