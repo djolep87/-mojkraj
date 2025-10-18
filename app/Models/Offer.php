@@ -46,6 +46,11 @@ class Offer extends Model
         return $this->belongsTo(BusinessUser::class);
     }
 
+    public function likes()
+    {
+        return $this->hasMany(OfferLike::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

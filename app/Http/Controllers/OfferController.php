@@ -106,6 +106,18 @@ class OfferController extends Controller
         
         $offers = $query->paginate(24)->withQueryString();
         
+        // Get liked offers for current user
+        $likedOfferIds = collect();
+        if ($user) {
+            $likedOfferIds = \App\Models\OfferLike::where('user_id', $user->id)
+                ->whereIn('offer_id', $offers->pluck('id'))
+                ->pluck('offer_id');
+        } elseif ($businessUser) {
+            $likedOfferIds = \App\Models\OfferLike::where('business_user_id', $businessUser->id)
+                ->whereIn('offer_id', $offers->pluck('id'))
+                ->pluck('offer_id');
+        }
+        
         // Get filter options
         $types = Offer::distinct()->pluck('offer_type')->filter();
         $priceRange = Offer::selectRaw('MIN(original_price) as min_price, MAX(original_price) as max_price')->first();
@@ -119,7 +131,7 @@ class OfferController extends Controller
         // Pass the current user info to view
         $currentUser = $user ?: $businessUser;
 
-        return view('offers.index', compact('offers', 'currentUser', 'types', 'priceRange', 'businessUser'));
+        return view('offers.index', compact('offers', 'currentUser', 'types', 'priceRange', 'businessUser', 'likedOfferIds'));
     }
 
     public function show(Offer $offer)
@@ -154,7 +166,15 @@ class OfferController extends Controller
         
         $offer->incrementViews();
         
-        return view('offers.show', compact('offer'));
+        // Check if current user has liked this offer
+        $isLiked = false;
+        if ($user) {
+            $isLiked = $offer->likes()->where('user_id', $user->id)->exists();
+        } elseif ($businessUser) {
+            $isLiked = $offer->likes()->where('business_user_id', $businessUser->id)->exists();
+        }
+        
+        return view('offers.show', compact('offer', 'isLiked'));
     }
 
     public function create()
@@ -297,7 +317,43 @@ class OfferController extends Controller
 
     public function like(Offer $offer)
     {
-        $offer->incrementLikes();
-        return back();
+        $user = Auth::user();
+        $businessUser = Auth::guard('business')->user();
+        
+        if (!$user && !$businessUser) {
+            return response()->json(['error' => 'Morate biti ulogovani da biste lajkovali ponude.'], 401);
+        }
+        
+        // Check if user has already liked this offer
+        $existingLike = $offer->likes()
+            ->where(function($query) use ($user, $businessUser) {
+                if ($user) {
+                    $query->where('user_id', $user->id);
+                }
+                if ($businessUser) {
+                    $query->orWhere('business_user_id', $businessUser->id);
+                }
+            })
+            ->first();
+        
+        if ($existingLike) {
+            // Unlike - remove the like
+            $existingLike->delete();
+            $offer->decrement('likes');
+            $liked = false;
+        } else {
+            // Like - add the like
+            $offer->likes()->create([
+                'user_id' => $user ? $user->id : null,
+                'business_user_id' => $businessUser ? $businessUser->id : null,
+            ]);
+            $offer->increment('likes');
+            $liked = true;
+        }
+        
+        return response()->json([
+            'likes' => $offer->fresh()->likes,
+            'liked' => $liked
+        ]);
     }
 }

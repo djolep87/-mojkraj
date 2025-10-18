@@ -115,7 +115,14 @@
                         
                         <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
                             <span>{{ $offer->views }} pregleda</span>
-                            <span>{{ $offer->likes }} lajkova</span>
+                            <button class="like-btn flex items-center space-x-1 text-gray-500 hover:text-green-600 transition-colors duration-200" 
+                                    data-offer-id="{{ $offer->id }}"
+                                    data-liked="{{ $likedOfferIds->contains($offer->id) ? 'true' : 'false' }}">
+                                <svg class="w-4 h-4 {{ $likedOfferIds->contains($offer->id) ? 'fill-current text-green-500' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                                <span class="likes-count">{{ $offer->likes }}</span>
+                            </button>
                             <span>{{ $offer->created_at->format('d.m.Y') }}</span>
                         </div>
                         
@@ -167,4 +174,50 @@
         </div>
     @endif
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const likeButtons = document.querySelectorAll('.like-btn');
+    
+    likeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const offerId = this.dataset.offerId;
+            const isLiked = this.dataset.liked === 'true';
+            const likesCount = this.querySelector('.likes-count');
+            const heartIcon = this.querySelector('svg');
+            
+            fetch(`/ponude/${offerId}/like`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Update likes count
+                likesCount.textContent = data.likes;
+                
+                // Update visual state
+                if (data.liked) {
+                    heartIcon.classList.add('fill-current', 'text-green-500');
+                    this.dataset.liked = 'true';
+                } else {
+                    heartIcon.classList.remove('fill-current', 'text-green-500');
+                    this.dataset.liked = 'false';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Došlo je do greške prilikom lajkovanja. Molimo pokušajte ponovo.');
+            });
+        });
+    });
+});
+</script>
 @endsection

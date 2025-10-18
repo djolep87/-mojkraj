@@ -94,8 +94,8 @@
                 <div class="pt-6 border-t border-gray-200">
                     <!-- Stats Row - Left aligned on all devices -->
                     <div class="flex items-center space-x-4 sm:space-x-6 mb-4">
-                        <button id="like-btn" class="flex items-center space-x-2 text-gray-500 hover:text-orange-600 transition-colors duration-200" data-pet-id="{{ $pet->id }}">
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6 {{ $isLiked ? 'fill-current' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button id="like-btn" class="flex items-center space-x-2 text-gray-500 hover:text-orange-600 transition-colors duration-200" data-pet-id="{{ $pet->id }}" data-liked="{{ $isLiked ? 'true' : 'false' }}">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 {{ $isLiked ? 'fill-current text-orange-500' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
                             <span id="likes-count" class="text-sm sm:text-base">{{ $pet->likes }}</span>
@@ -244,9 +244,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             likesCount.textContent = data.likes;
             if (data.liked) {
-                likeBtn.querySelector('svg').classList.add('fill-current');
+                likeBtn.querySelector('svg').classList.add('fill-current', 'text-orange-500');
+                likeBtn.dataset.liked = 'true';
             } else {
-                likeBtn.querySelector('svg').classList.remove('fill-current');
+                likeBtn.querySelector('svg').classList.remove('fill-current', 'text-orange-500');
+                likeBtn.dataset.liked = 'false';
             }
         })
         .catch(error => console.error('Error:', error));
