@@ -21,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Configure session cookie lifetime to 30 days
+        config(['session.lifetime' => 43200]); // 30 dana u minutama
+        
         // Share user data with all views
         View::composer('*', function ($view) {
             try {

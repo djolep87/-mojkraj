@@ -9,6 +9,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OfferController;
+use App\Http\Controllers\BuildingController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\VoteController;
+use App\Http\Controllers\AnnouncementController;
 
 // Home route
 Route::get('/', function () {
@@ -179,4 +184,47 @@ Route::middleware('auth:business')->group(function () {
     Route::get('/business/ponude/{offer}/edit', [OfferController::class, 'edit'])->name('offers.edit');
     Route::put('/business/ponude/{offer}', [OfferController::class, 'update'])->name('offers.update');
     Route::delete('/business/ponude/{offer}', [OfferController::class, 'destroy'])->name('offers.destroy');
+});
+
+// Stambene zajednice rute
+Route::middleware('auth')->group(function () {
+    Route::get('/stambene-zajednice', [BuildingController::class, 'index'])->name('buildings.index');
+    Route::get('/stambene-zajednice/{building}', [BuildingController::class, 'show'])->name('buildings.show');
+    Route::post('/stambene-zajednice', [BuildingController::class, 'store'])->name('buildings.store');
+    Route::put('/stambene-zajednice/{building}', [BuildingController::class, 'update'])->name('buildings.update');
+    Route::delete('/stambene-zajednice/{building}', [BuildingController::class, 'destroy'])->name('buildings.destroy');
+    
+    // Reports routes
+    Route::get('/stambene-zajednice/{building}/prijave', [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/stambene-zajednice/{building}/prijave', [ReportController::class, 'store'])->name('reports.store');
+    Route::get('/stambene-zajednice/{building}/prijave/{report}', [ReportController::class, 'show'])->name('reports.show');
+    Route::put('/stambene-zajednice/{building}/prijave/{report}', [ReportController::class, 'update'])->name('reports.update');
+    Route::delete('/stambene-zajednice/{building}/prijave/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');
+    Route::patch('/stambene-zajednice/{building}/prijave/{report}/close', [ReportController::class, 'close'])->name('reports.close');
+    
+    // Expenses routes
+    Route::get('/stambene-zajednice/{building}/troskovi', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('/stambene-zajednice/{building}/troskovi', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::get('/stambene-zajednice/{building}/troskovi/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
+    Route::put('/stambene-zajednice/{building}/troskovi/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+    Route::delete('/stambene-zajednice/{building}/troskovi/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    Route::get('/stambene-zajednice/{building}/troskovi-stats', [ExpenseController::class, 'stats'])->name('expenses.stats');
+    
+    // Votes routes
+    Route::get('/stambene-zajednice/{building}/glasovanja', [VoteController::class, 'index'])->name('votes.index');
+    Route::post('/stambene-zajednice/{building}/glasovanja', [VoteController::class, 'store'])->name('votes.store');
+    Route::get('/stambene-zajednice/{building}/glasovanja/{vote}', [VoteController::class, 'show'])->name('votes.show');
+    Route::put('/stambene-zajednice/{building}/glasovanja/{vote}', [VoteController::class, 'update'])->name('votes.update');
+    Route::delete('/stambene-zajednice/{building}/glasovanja/{vote}', [VoteController::class, 'destroy'])->name('votes.destroy');
+    Route::post('/stambene-zajednice/{building}/glasovanja/{vote}/vote', [VoteController::class, 'vote'])->name('votes.vote');
+    Route::get('/stambene-zajednice/{building}/glasovanja/{vote}/rezultati', [VoteController::class, 'results'])->name('votes.results');
+    
+    // Announcements routes
+    Route::get('/stambene-zajednice/{building}/objave', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::post('/stambene-zajednice/{building}/objave', [AnnouncementController::class, 'store'])->name('announcements.store');
+    Route::get('/stambene-zajednice/{building}/objave/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
+    Route::put('/stambene-zajednice/{building}/objave/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+    Route::delete('/stambene-zajednice/{building}/objave/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+    Route::patch('/stambene-zajednice/{building}/objave/{announcement}/pin', [AnnouncementController::class, 'pin'])->name('announcements.pin');
+    Route::patch('/stambene-zajednice/{building}/objave/{announcement}/unpin', [AnnouncementController::class, 'unpin'])->name('announcements.unpin');
 });

@@ -56,4 +56,43 @@ class User extends Authenticatable
     {
         return $this->hasMany(News::class);
     }
+
+    // Stambene zajednice relacije
+    public function buildings()
+    {
+        return $this->belongsToMany(Building::class, 'building_user')
+            ->withPivot('role_in_building')
+            ->withTimestamps();
+    }
+
+    public function managedBuildings()
+    {
+        return $this->belongsToMany(Building::class, 'building_user')
+            ->wherePivot('role_in_building', 'manager')
+            ->withPivot('role_in_building')
+            ->withTimestamps();
+    }
+
+    public function residentBuildings()
+    {
+        return $this->belongsToMany(Building::class, 'building_user')
+            ->wherePivot('role_in_building', 'resident')
+            ->withPivot('role_in_building')
+            ->withTimestamps();
+    }
+
+    public function apartments()
+    {
+        return $this->hasMany(Apartment::class, 'owner_id');
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    public function voteResults()
+    {
+        return $this->hasMany(VoteResult::class);
+    }
 }
