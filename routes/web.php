@@ -70,6 +70,11 @@ Route::get('/ponude-info', function () {
     return view('offers-info');
 })->name('offers.info');
 
+// Buildings info page
+Route::get('/stambene-zajednice-info', function () {
+    return view('buildings-info');
+})->name('buildings.info');
+
 // Pets info page
 
 // About page

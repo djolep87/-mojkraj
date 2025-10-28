@@ -19,10 +19,22 @@ class BuildingController extends Controller
     {
         $user = Auth::user();
         
-        // Filtriranje po gradu i naselju korisnika
-        $buildings = Building::inArea($user->city, $user->neighborhood)
-            ->with(['users', 'apartments', 'reports'])
-            ->paginate(15);
+        // Započni query sa filtriranjem po gradu i naselju korisnika
+        $query = Building::inArea($user->city, $user->neighborhood);
+        
+        // Ako postoji search parametar, dodaj pretragu
+        if ($request->has('search') && !empty($request->search)) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('address', 'LIKE', '%' . $searchTerm . '%');
+            });
+        }
+        
+        $buildings = $query->with(['users', 'apartments', 'reports'])
+            ->orderBy('name', 'asc')
+            ->paginate(15)
+            ->withQueryString(); // Čuva search parametar u pagination linkovima
 
         // Ako je AJAX zahtev ili API zahtev, vrati JSON
         if ($request->ajax() || $request->is('api/*')) {

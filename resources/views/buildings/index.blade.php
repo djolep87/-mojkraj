@@ -27,6 +27,69 @@
             </div>
         </div>
 
+        <!-- Search Bar -->
+        <div class="mb-8">
+            <form method="GET" action="{{ route('buildings.index') }}" id="searchForm" class="max-w-2xl">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        name="search" 
+                        value="{{ request('search') }}"
+                        placeholder="Pretražite zgrade po nazivu ili adresi..." 
+                        class="w-full pl-12 pr-32 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400 transition-all duration-200"
+                        autocomplete="off"
+                    >
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2">
+                        @if(request('search'))
+                        <button 
+                            type="button"
+                            onclick="clearSearch()"
+                            class="mr-2 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                            title="Obriši pretragu"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        @endif
+                        <button 
+                            type="submit"
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center"
+                        >
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            Traži
+                        </button>
+                    </div>
+                </div>
+                @if(request('search'))
+                <div class="mt-3 flex items-center text-sm text-gray-600">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Pretraga za: <span class="font-semibold ml-1">"{{ request('search') }}"</span>
+                    <span class="ml-2 text-gray-400">•</span>
+                    <span class="ml-2">Pronađeno: {{ $buildings->total() }} 
+                        @if($buildings->total() == 1)
+                            zgrada
+                        @elseif($buildings->total() < 5)
+                            zgrade
+                        @else
+                            zgrada
+                        @endif
+                    </span>
+                </div>
+                @endif
+            </form>
+        </div>
+
         <!-- Buildings Grid -->
         @if($buildings->count() > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -135,19 +198,45 @@
         @else
             <!-- Empty State -->
             <div class="text-center py-12">
-                <div class="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-12 h-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Nema zgrada</h3>
-                <p class="text-gray-600 mb-6">Još uvek niste dodali nijednu zgradu. Kliknite na dugme ispod da kreirate svoju prvu stambenu zajednicu.</p>
-                <a href="{{ route('buildings.store') }}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Dodaj prvu zgradu
-                </a>
+                @if(request('search'))
+                    <!-- No search results -->
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Nema rezultata pretrage</h3>
+                    <p class="text-gray-600 mb-6">
+                        Nije pronađena nijedna zgrada koja odgovara pretrazi <span class="font-semibold">"{{ request('search') }}"</span>.
+                        Pokušajte sa drugim terminom ili <a href="{{ route('buildings.index') }}" class="text-indigo-600 hover:text-indigo-700 underline">pogledajte sve zgrade</a>.
+                    </p>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <button onclick="clearSearch()" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                            Obriši pretragu
+                        </button>
+                        <a href="{{ route('buildings.store') }}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Dodaj zgradu
+                        </a>
+                    </div>
+                @else
+                    <!-- No buildings at all -->
+                    <div class="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-12 h-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Nema zgrada</h3>
+                    <p class="text-gray-600 mb-6">Još uvek niste dodali nijednu zgradu. Kliknite na dugme ispod da kreirate svoju prvu stambenu zajednicu.</p>
+                    <a href="{{ route('buildings.store') }}" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Dodaj prvu zgradu
+                    </a>
+                @endif
             </div>
         @endif
     </div>
@@ -305,8 +394,24 @@ async function selfJoinFromList(buildingId) {
     }
 }
 
+// Search Functions
+function clearSearch() {
+    window.location.href = '{{ route("buildings.index") }}';
+}
+
 // Initialize everything on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Enter key support for search
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('searchForm').submit();
+            }
+        });
+    }
+    
     // Close modal when clicking outside
     const modal = document.getElementById('buildingModal');
     modal.addEventListener('click', function(e) {
