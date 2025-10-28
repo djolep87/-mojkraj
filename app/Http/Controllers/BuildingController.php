@@ -41,18 +41,9 @@ class BuildingController extends Controller
      */
     public function show(Building $building)
     {
-        // Proverava da li korisnik ima pristup zgradi
-        if (!$building->hasUser(Auth::user())) {
-            if (request()->ajax() || request()->is('api/*')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Nemate pristup ovoj zgradi.'
-                ], 403);
-            }
-            
-            abort(403, 'Nemate pristup ovoj zgradi.');
-        }
-
+        // Dozvoliti pristup svim korisnicima (članovi imaju pun pristup, ostali mogu videti osnovne info)
+        // Ne blokiramo pristup, ali u view-u kontrolišemo šta se prikazuje
+        
         $building->load([
             'users',
             'apartments.owner',
@@ -63,6 +54,14 @@ class BuildingController extends Controller
         ]);
 
         if (request()->ajax() || request()->is('api/*')) {
+            // Za API, proveravamo pristup
+            if (!$building->hasUser(Auth::user())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nemate pristup ovoj zgradi.'
+                ], 403);
+            }
+            
             return response()->json([
                 'success' => true,
                 'data' => $building
@@ -359,6 +358,217 @@ class BuildingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Korisnik je uspešno uklonjen iz zgrade'
+        ]);
+    }
+
+    /**
+     * Korisnik se pridružuje zgradi preko adrese
+     */
+    public function join(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'address' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validacija neuspešna',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $data = $request->all();
+        
+        // Automatski postavi naselje korisnika ako nije uneseno
+        if (empty($data['neighborhood'])) {
+            $data['neighborhood'] = Auth::user()->neighborhood;
+        }
+        
+        // Automatski postavi grad korisnika ako nije uneseno
+        if (empty($data['city'])) {
+            $data['city'] = Auth::user()->city;
+        }
+
+        // Pronađi zgradu sa ovom adresom
+        $building = Building::where('address', $data['address'])
+            ->where('city', $data['city'])
+            ->where('neighborhood', $data['neighborhood'])
+            ->first();
+
+        if (!$building) {
+            if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Zgrada sa ovom adresom ne postoji.',
+                    'suggestion' => 'Možete kreirati novu zgradu.'
+                ], 404);
+            }
+            
+            return redirect()->back()
+                ->withErrors(['address' => 'Zgrada sa ovom adresom ne postoji.'])
+                ->withInput();
+        }
+
+        // Proveri da li je korisnik već član zgrade
+        if ($building->hasUser(Auth::user())) {
+            if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Već ste član ove zgrade.'
+                ], 422);
+            }
+            
+            return redirect()->back()
+                ->withErrors(['error' => 'Već ste član ove zgrade.']);
+        }
+
+        // Dodaj korisnika kao člana zgrade (kao resident)
+        $building->users()->attach(Auth::id(), [
+            'role_in_building' => 'resident'
+        ]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Uspešno ste se pridružili zgradi',
+                'data' => $building->load(['users', 'apartments'])
+            ], 201);
+        }
+
+        return redirect()->route('buildings.index')
+            ->with('success', 'Uspešno ste se pridružili zgradi');
+    }
+
+    /**
+     * Vraća listu korisnika sa istom adresom kao zgrada (za managera)
+     */
+    public function getEligibleUsers(Building $building): JsonResponse
+    {
+        // Proverava da li je korisnik manager zgrade
+        if (!$building->isManager(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nemate dozvolu za pregled korisnika.'
+            ], 403);
+        }
+
+        // Pronađi sve korisnike koji žive na istoj adresi ali nisu članovi zgrade
+        $eligibleUsers = User::where('address', $building->address)
+            ->where('city', $building->city)
+            ->where('neighborhood', $building->neighborhood)
+            ->whereDoesntHave('buildings', function ($query) use ($building) {
+                $query->where('buildings.id', $building->id);
+            })
+            ->select('id', 'name', 'email', 'address')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $eligibleUsers
+        ]);
+    }
+
+    /**
+     * Korisnik se samouključuje u zgradu (samo ako je adresa ista)
+     */
+    public function selfJoin(Building $building): JsonResponse
+    {
+        $user = Auth::user();
+
+        // Proveri da li korisnik već pripada zgradi
+        if ($building->hasUser($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Već ste član ove zgrade.'
+            ], 422);
+        }
+
+        // Proveri da li je adresa korisnika ista kao adresa zgrade
+        if ($user->address !== $building->address || 
+            $user->city !== $building->city || 
+            $user->neighborhood !== $building->neighborhood) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Možete se pridružiti samo zgradama na istoj adresi gde vi živite. Vaša adresa: ' . $user->address . ', ' . $user->neighborhood . ', ' . $user->city . '. Adresa zgrade: ' . $building->address . ', ' . $building->neighborhood . ', ' . $building->city
+            ], 403);
+        }
+
+        // Dodaj korisnika kao resident
+        $building->users()->attach($user->id, [
+            'role_in_building' => 'resident'
+        ]);
+
+        $building->load(['users', 'apartments']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Uspešno ste se pridružili zgradi "' . $building->name . '"',
+            'data' => $building
+        ]);
+    }
+
+    /**
+     * Dodaje korisnika u zgradu (poboljšana verzija sa proverom adrese)
+     */
+    public function addResident(Request $request, Building $building): JsonResponse
+    {
+        // Proverava da li je korisnik manager zgrade
+        if (!$building->isManager(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nemate dozvolu za dodavanje korisnika.'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validacija neuspešna',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $userToAdd = User::findOrFail($request->user_id);
+
+        // Proveri da li korisnik živi na istoj adresi
+        if ($userToAdd->address !== $building->address || 
+            $userToAdd->city !== $building->city || 
+            $userToAdd->neighborhood !== $building->neighborhood) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Korisnik ne živi na adresi ove zgrade. Možete dodati samo korisnike sa istom adresom.'
+            ], 422);
+        }
+
+        // Proverava da li korisnik već postoji u zgradi
+        if ($building->hasUser($userToAdd)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Korisnik već postoji u ovoj zgradi.'
+            ], 422);
+        }
+
+        $building->users()->attach($userToAdd->id, [
+            'role_in_building' => 'resident'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Korisnik "' . $userToAdd->name . '" je uspešno dodat u zgradu',
+            'data' => $userToAdd
         ]);
     }
 }

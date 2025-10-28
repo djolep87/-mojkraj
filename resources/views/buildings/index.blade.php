@@ -47,13 +47,21 @@
                                     <p class="text-gray-500 text-sm">{{ $building->neighborhood }}, {{ $building->city }}</p>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    @if($building->isManager(auth()->user()))
-                                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                            Manager
-                                        </span>
-                                    @else
-                                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                            Stanar
+                                    @if($building->hasUser(auth()->user()))
+                                        @if($building->isManager(auth()->user()))
+                                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                                Manager
+                                            </span>
+                                        @else
+                                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                                Stanar
+                                            </span>
+                                        @endif
+                                    @elseif($building->address === auth()->user()->address && 
+                                            $building->city === auth()->user()->city && 
+                                            $building->neighborhood === auth()->user()->neighborhood)
+                                        <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                            Na vašoj adresi
                                         </span>
                                     @endif
                                 </div>
@@ -80,18 +88,41 @@
 
                         <!-- Building Actions -->
                         <div class="px-6 pb-6">
-                            <div class="flex space-x-2">
-                                <a href="{{ route('buildings.show', $building) }}" class="flex-1 bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200">
-                                    Otvori
-                                </a>
-                                @if($building->isManager(auth()->user()))
-                                    <button onclick="editBuilding({{ $building->id }})" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            @if($building->hasUser(auth()->user()))
+                                <!-- User is already a member -->
+                                <div class="flex space-x-2">
+                                    <a href="{{ route('buildings.show', $building) }}" class="flex-1 bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200">
+                                        Otvori
+                                    </a>
+                                    @if($building->isManager(auth()->user()))
+                                        <button onclick="editBuilding({{ $building->id }})" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                    @endif
+                                </div>
+                            @elseif($building->address === auth()->user()->address && 
+                                    $building->city === auth()->user()->city && 
+                                    $building->neighborhood === auth()->user()->neighborhood)
+                                <!-- User can join (same address) -->
+                                <div class="flex flex-col space-y-2">
+                                    <button onclick="selfJoinFromList({{ $building->id }})" class="w-full bg-green-600 text-white text-center py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 flex items-center justify-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                         </svg>
+                                        Pridruži se zgradi
                                     </button>
-                                @endif
-                            </div>
+                                    <a href="{{ route('buildings.show', $building) }}" class="w-full bg-gray-200 text-gray-700 text-center py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                                        Pregledaj
+                                    </a>
+                                </div>
+                            @else
+                                <!-- User cannot join (different address) -->
+                                <a href="{{ route('buildings.show', $building) }}" class="w-full bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 block">
+                                    Pregledaj
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -218,6 +249,60 @@ function showNotification(message, type) {
             notification.remove();
         }, 300);
     }, 4000);
+}
+
+async function selfJoinFromList(buildingId) {
+    if (!confirm('Da li ste sigurni da želite da se pridružite ovoj zgradi?')) {
+        return;
+    }
+    
+    // Find and disable button during request
+    const buttons = document.querySelectorAll(`button[onclick*="selfJoinFromList(${buildingId})"]`);
+    buttons.forEach(button => {
+        button.disabled = true;
+        const originalHTML = button.innerHTML;
+        button.dataset.originalHTML = originalHTML;
+        button.innerHTML = '<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>Pridruživanje...';
+    });
+    
+    try {
+        const response = await fetch(`/stambene-zajednice/${buildingId}/self-join`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showNotification(data.message || 'Greška pri pridruživanju zgradi', 'error');
+            // Restore buttons
+            buttons.forEach(button => {
+                button.disabled = false;
+                if (button.dataset.originalHTML) {
+                    button.innerHTML = button.dataset.originalHTML;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri pridruživanju zgradi', 'error');
+        // Restore buttons
+        buttons.forEach(button => {
+            button.disabled = false;
+            if (button.dataset.originalHTML) {
+                button.innerHTML = button.dataset.originalHTML;
+            }
+        });
+    }
 }
 
 // Initialize everything on page load

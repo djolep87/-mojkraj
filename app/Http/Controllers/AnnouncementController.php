@@ -25,6 +25,7 @@ class AnnouncementController extends Controller
         }
 
         $announcements = $building->announcements()
+            ->with(['user:id,name', 'comments.user:id,name'])
             ->ordered()
             ->paginate(15);
 
@@ -63,8 +64,10 @@ class AnnouncementController extends Controller
 
         $data = $request->all();
         $data['building_id'] = $building->id;
+        $data['user_id'] = Auth::id();
 
         $announcement = Announcement::create($data);
+        $announcement->load('user:id,name');
 
         return response()->json([
             'success' => true,
@@ -93,6 +96,8 @@ class AnnouncementController extends Controller
                 'message' => 'Nemate pristup ovoj zgradi.'
             ], 403);
         }
+
+        $announcement->load(['user:id,name', 'comments.user:id,name']);
 
         return response()->json([
             'success' => true,
@@ -136,6 +141,7 @@ class AnnouncementController extends Controller
         }
 
         $announcement->update($request->all());
+        $announcement->load('user:id,name');
 
         return response()->json([
             'success' => true,

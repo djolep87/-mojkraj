@@ -14,6 +14,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\VoteController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AnnouncementCommentController;
 
 // Home route
 Route::get('/', function () {
@@ -227,4 +228,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/stambene-zajednice/{building}/objave/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
     Route::patch('/stambene-zajednice/{building}/objave/{announcement}/pin', [AnnouncementController::class, 'pin'])->name('announcements.pin');
     Route::patch('/stambene-zajednice/{building}/objave/{announcement}/unpin', [AnnouncementController::class, 'unpin'])->name('announcements.unpin');
+    
+    // Join building routes
+    Route::post('/stambene-zajednice/join', [BuildingController::class, 'join'])->name('buildings.join');
+    Route::post('/stambene-zajednice/{building}/self-join', [BuildingController::class, 'selfJoin'])->name('buildings.selfJoin');
+    Route::get('/stambene-zajednice/{building}/eligible-users', [BuildingController::class, 'getEligibleUsers'])->name('buildings.eligibleUsers');
+    Route::post('/stambene-zajednice/{building}/add-resident', [BuildingController::class, 'addResident'])->name('buildings.addResident');
+    
+    // Announcement comments routes
+    Route::get('/stambene-zajednice/{building}/objave/{announcement}/komentari', [AnnouncementCommentController::class, 'index'])->name('announcements.comments.index');
+    Route::post('/stambene-zajednice/{building}/objave/{announcement}/komentari', [AnnouncementCommentController::class, 'store'])->name('announcements.comments.store');
+    Route::put('/stambene-zajednice/{building}/objave/{announcement}/komentari/{comment}', [AnnouncementCommentController::class, 'update'])->name('announcements.comments.update');
+    Route::delete('/stambene-zajednice/{building}/objave/{announcement}/komentari/{comment}', [AnnouncementCommentController::class, 'destroy'])->name('announcements.comments.destroy');
 });

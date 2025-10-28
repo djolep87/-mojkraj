@@ -40,6 +40,7 @@
         </div>
 
         <!-- Stats Cards -->
+        @if($building->hasUser(auth()->user()))
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div class="flex items-center">
@@ -97,8 +98,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Navigation Tabs -->
+        @if($building->hasUser(auth()->user()))
         <div class="bg-white rounded-xl shadow-lg border border-gray-100 mb-8">
             <div class="border-b border-gray-200">
                 <nav class="flex space-x-8 px-6">
@@ -124,42 +127,106 @@
             <div class="p-6">
                 <!-- Overview Tab -->
                 <div id="overview-tab" class="tab-content">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Recent Reports -->
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Poslednje prijave</h3>
-                            <div class="space-y-3">
-                                @forelse($building->reports->take(5) as $report)
-                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <div>
-                                            <p class="font-medium text-gray-900">{{ $report->title }}</p>
-                                            <p class="text-sm text-gray-500">{{ $report->created_at->diffForHumans() }}</p>
-                                        </div>
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $report->status === 'open' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
-                                            {{ $report->status === 'open' ? 'Otvoreno' : 'Zatvoreno' }}
-                                        </span>
-                                    </div>
-                                @empty
-                                    <p class="text-gray-500 text-center py-4">Nema prijava</p>
-                                @endforelse
-                            </div>
-                        </div>
-
-                        <!-- Recent Announcements -->
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Poslednje objave</h3>
-                            <div class="space-y-3">
-                                @forelse($building->announcements->take(5) as $announcement)
-                                    <div class="p-3 bg-gray-50 rounded-lg">
-                                        <p class="font-medium text-gray-900">{{ $announcement->title }}</p>
-                                        <p class="text-sm text-gray-500">{{ $announcement->created_at->diffForHumans() }}</p>
-                                    </div>
-                                @empty
-                                    <p class="text-gray-500 text-center py-4">Nema objava</p>
-                                @endforelse
-                            </div>
-                        </div>
+                    <!-- Action Buttons -->
+                    <div class="mb-6 flex flex-wrap gap-3">
+                        @if($building->isManager(auth()->user()))
+                            <button onclick="openAddResidentModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Dodaj stanara
+                            </button>
+                        @elseif(!$building->hasUser(auth()->user()))
+                            <button onclick="selfJoinBuilding()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                </svg>
+                                Pridruži se zgradi
+                            </button>
+                        @endif
                     </div>
+
+                    <!-- Members List -->
+                    @if($building->hasUser(auth()->user()))
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Članovi zajednice</h3>
+                            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                <div class="divide-y divide-gray-200">
+                                    @foreach($building->users as $member)
+                                        <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                    <span class="text-indigo-600 font-semibold">{{ substr($member->name, 0, 1) }}</span>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <p class="font-medium text-gray-900">{{ $member->name }}</p>
+                                                    <p class="text-sm text-gray-500">{{ $member->email }}</p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                @if($member->pivot->role_in_building === 'manager')
+                                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-3 py-1 rounded-full">Manager</span>
+                                                @else
+                                                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full">Stanar</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="mb-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p class="text-sm text-yellow-800">
+                                    <strong>Niste član ove zgrade.</strong> Detaljnije informacije su dostupne samo članovima. 
+                                    Ako živite na ovoj adresi, možete se pridružiti klikom na dugme "Pridruži se zgradi".
+                                </p>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($building->hasUser(auth()->user()))
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Recent Reports -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Poslednje prijave</h3>
+                                <div class="space-y-3">
+                                    @forelse($building->reports->take(5) as $report)
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <p class="font-medium text-gray-900">{{ $report->title }}</p>
+                                                <p class="text-sm text-gray-500">{{ $report->created_at->diffForHumans() }}</p>
+                                            </div>
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $report->status === 'open' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
+                                                {{ $report->status === 'open' ? 'Otvoreno' : 'Zatvoreno' }}
+                                            </span>
+                                        </div>
+                                    @empty
+                                        <p class="text-gray-500 text-center py-4">Nema prijava</p>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                            <!-- Recent Announcements -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Poslednje objave</h3>
+                                <div class="space-y-3">
+                                    @forelse($building->announcements->take(5) as $announcement)
+                                        <div class="p-3 bg-gray-50 rounded-lg">
+                                            <p class="font-medium text-gray-900">{{ $announcement->title }}</p>
+                                            <p class="text-sm text-gray-500">{{ $announcement->created_at->diffForHumans() }}</p>
+                                        </div>
+                                    @empty
+                                        <p class="text-gray-500 text-center py-4">Nema objava</p>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Other tabs will be loaded via AJAX -->
@@ -180,10 +247,202 @@
                 </div>
             </div>
         </div>
+        @endif
+    </div>
+</div>
+
+<!-- Add Resident Modal -->
+<div id="addResidentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Dodaj stanara</h3>
+                <button onclick="closeAddResidentModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="eligibleUsersList" class="max-h-96 overflow-y-auto">
+                <div class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                    <p class="mt-2 text-gray-500">Učitavanje korisnika...</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-2xl max-w-md ${
+        type === 'success' 
+            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' 
+            : 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+    }`;
+    
+    const icon = type === 'success' 
+        ? '<svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+        : '<svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+    
+    notification.innerHTML = icon + '<span>' + message + '</span>';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 4000);
+}
+
+async function openAddResidentModal() {
+    const modal = document.getElementById('addResidentModal');
+    const listContainer = document.getElementById('eligibleUsersList');
+    
+    modal.classList.remove('hidden');
+    listContainer.innerHTML = `
+        <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <p class="mt-2 text-gray-500">Učitavanje korisnika...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch('{{ route("buildings.eligibleUsers", $building->id) }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.data.length > 0) {
+            listContainer.innerHTML = `
+                <div class="space-y-2">
+                    <p class="text-sm text-gray-600 mb-4">Korisnici koji žive na adresi <strong>{{ $building->address }}</strong> i mogu biti dodati:</p>
+                    ${data.data.map(user => `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                    <span class="text-indigo-600 font-semibold">${user.name.charAt(0)}</span>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="font-medium text-gray-900">${user.name}</p>
+                                    <p class="text-sm text-gray-500">${user.email}</p>
+                                </div>
+                            </div>
+                            <button onclick="addResident(${user.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200">
+                                Dodaj
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            listContainer.innerHTML = `
+                <div class="text-center py-8">
+                    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <p class="text-gray-500">Nema korisnika sa ovom adresom koji mogu biti dodati.</p>
+                    <p class="text-sm text-gray-400 mt-2">Svi korisnici sa ovom adresom su već članovi zgrade.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        listContainer.innerHTML = `
+            <div class="text-center py-8 text-red-600">
+                <p>Desila se greška pri učitavanju korisnika.</p>
+            </div>
+        `;
+    }
+}
+
+function closeAddResidentModal() {
+    document.getElementById('addResidentModal').classList.add('hidden');
+}
+
+async function addResident(userId) {
+    try {
+        const response = await fetch('{{ route("buildings.addResident", $building->id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ user_id: userId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            closeAddResidentModal();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showNotification(data.message || 'Greška pri dodavanju korisnika', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri dodavanju korisnika', 'error');
+    }
+}
+
+async function selfJoinBuilding() {
+    if (!confirm('Da li ste sigurni da želite da se pridružite ovoj zgradi?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('{{ route("buildings.selfJoin", $building->id) }}', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showNotification(data.message || 'Greška pri pridruživanju zgradi', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri pridruživanju zgradi', 'error');
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('addResidentModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeAddResidentModal();
+            }
+        });
+    }
+});
+
 function showTab(tabName) {
     // Hide all tab contents
     document.querySelectorAll('.tab-content').forEach(tab => {
