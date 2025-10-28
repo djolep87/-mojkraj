@@ -136,15 +136,35 @@
                                 </svg>
                                 Dodaj stanara
                             </button>
+                            <button onclick="loadJoinRequests()" class="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition-colors duration-200 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Zahtevi za pridruživanje
+                                <span id="pendingRequestsBadge" class="ml-2 bg-white text-orange-600 text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
+                            </button>
                         @elseif(!$building->hasUser(auth()->user()))
-                            <button onclick="selfJoinBuilding()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 flex items-center">
+                            <button id="selfJoinButton" onclick="checkJoinRequestStatus()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                 </svg>
-                                Pridruži se zgradi
+                                <span id="selfJoinText">Pridruži se zgradi</span>
                             </button>
+                            <div id="joinRequestStatus" class="hidden mt-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <p class="text-sm text-yellow-800" id="joinRequestStatusText"></p>
+                            </div>
                         @endif
                     </div>
+
+                    <!-- Join Requests Section (for managers) -->
+                    @if($building->isManager(auth()->user()))
+                    <div id="joinRequestsSection" class="hidden mt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Zahtevi za pridruživanje</h3>
+                        <div id="joinRequestsList" class="space-y-3">
+                            <!-- Zahtevi će biti učitani ovde -->
+                        </div>
+                    </div>
+                    @endif
 
                     <!-- Members List -->
                     @if($building->hasUser(auth()->user()))
@@ -1820,5 +1840,331 @@ async function closeReport(reportId) {
         showNotification('Desila se greška pri zatvaranju prijave', 'error');
     }
 }
+
+// Join Request Functions
+async function checkJoinRequestStatus() {
+    try {
+        const response = await fetch('{{ route("buildings.joinRequestStatus", $building->id) }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.is_member) {
+                // Korisnik je već član, prikaži poruku
+                document.getElementById('selfJoinButton').disabled = true;
+                document.getElementById('selfJoinButton').classList.add('opacity-50', 'cursor-not-allowed');
+                document.getElementById('selfJoinText').textContent = 'Već ste član ove zgrade';
+            } else if (data.request) {
+                // Postoji zahtev
+                const statusDiv = document.getElementById('joinRequestStatus');
+                const statusText = document.getElementById('joinRequestStatusText');
+                const button = document.getElementById('selfJoinButton');
+                const buttonText = document.getElementById('selfJoinText');
+                
+                if (data.request.status === 'pending') {
+                    statusDiv.classList.remove('hidden');
+                    statusText.textContent = 'Vaš zahtev za pridruživanje je na čekanju. Manager će ga pregledati.';
+                    button.disabled = true;
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                    buttonText.textContent = 'Zahtev na čekanju';
+                    button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    button.classList.add('bg-gray-400');
+                } else if (data.request.status === 'approved') {
+                    statusDiv.classList.remove('hidden');
+                    statusDiv.classList.remove('bg-yellow-50', 'border-yellow-200');
+                    statusDiv.classList.add('bg-green-50', 'border-green-200');
+                    statusText.textContent = 'Vaš zahtev je odobren! Osvežite stranicu.';
+                    statusText.classList.remove('text-yellow-800');
+                    statusText.classList.add('text-green-800');
+                } else if (data.request.status === 'rejected') {
+                    statusDiv.classList.remove('hidden');
+                    statusDiv.classList.remove('bg-yellow-50', 'border-yellow-200');
+                    statusDiv.classList.add('bg-red-50', 'border-red-200');
+                    statusText.textContent = 'Vaš zahtev je odbijen.';
+                    statusText.classList.remove('text-yellow-800');
+                    statusText.classList.add('text-red-800');
+                    button.disabled = false;
+                    button.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                // Nema zahteva, omogući slanje
+                document.getElementById('selfJoinButton').onclick = selfJoinBuilding;
+            }
+        }
+    } catch (error) {
+        console.error('Error checking join request status:', error);
+    }
+}
+
+async function selfJoinBuilding() {
+    const button = document.getElementById('selfJoinButton');
+    const originalText = document.getElementById('selfJoinText').textContent;
+    
+    button.disabled = true;
+    document.getElementById('selfJoinText').textContent = 'Slanje zahteva...';
+    
+    try {
+        const response = await fetch('{{ route("buildings.selfJoin", $building->id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            // Ažuriraj UI da prikaže status zahteva
+            checkJoinRequestStatus();
+        } else {
+            showNotification(data.message || 'Greška pri slanju zahteva', 'error');
+            button.disabled = false;
+            document.getElementById('selfJoinText').textContent = originalText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri slanju zahteva', 'error');
+        button.disabled = false;
+        document.getElementById('selfJoinText').textContent = originalText;
+    }
+}
+
+async function loadJoinRequests() {
+    const section = document.getElementById('joinRequestsSection');
+    const list = document.getElementById('joinRequestsList');
+    
+    // Toggle sekcije
+    if (section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        list.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div><p class="mt-2 text-gray-500">Učitavanje zahteva...</p></div>';
+        
+        try {
+            const response = await fetch('{{ route("buildings.joinRequests", $building->id) }}', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                renderJoinRequests(data.data);
+                updatePendingBadge(data.data);
+            } else {
+                showNotification(data.message || 'Greška pri učitavanju zahteva', 'error');
+                section.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Desila se greška pri učitavanju zahteva', 'error');
+            section.classList.add('hidden');
+        }
+    } else {
+        section.classList.add('hidden');
+    }
+}
+
+// Funkcija za učitavanje zahteva bez toggla (za refresh)
+async function refreshJoinRequests() {
+    const list = document.getElementById('joinRequestsList');
+    
+    try {
+        const response = await fetch('{{ route("buildings.joinRequests", $building->id) }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            renderJoinRequests(data.data);
+            updatePendingBadge(data.data);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function renderJoinRequests(requests) {
+    const list = document.getElementById('joinRequestsList');
+    
+    if (requests.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center py-8">Nema aktivnih zahteva za pridruživanje.</p>';
+        return;
+    }
+    
+    list.innerHTML = requests.map(request => {
+        const statusColors = {
+            'pending': 'bg-yellow-100 text-yellow-800',
+            'approved': 'bg-green-100 text-green-800',
+            'rejected': 'bg-red-100 text-red-800'
+        };
+        
+        const statusTexts = {
+            'pending': 'Na čekanju',
+            'approved': 'Odobren',
+            'rejected': 'Odbijen'
+        };
+        
+        const date = new Date(request.created_at).toLocaleDateString('sr-RS', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        let actions = '';
+        if (request.status === 'pending') {
+            actions = `
+                <div class="flex space-x-2">
+                    <button onclick="approveJoinRequest(${request.id})" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                        Odobri
+                    </button>
+                    <button onclick="rejectJoinRequest(${request.id})" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                        Odbij
+                    </button>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <h4 class="font-semibold text-gray-900">${escapeHtml(request.user.name)}</h4>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColors[request.status]}">
+                                ${statusTexts[request.status]}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-1">${escapeHtml(request.user.email)}</p>
+                        <p class="text-sm text-gray-500">${escapeHtml(request.user.address || '')}, ${escapeHtml(request.user.neighborhood || '')}, ${escapeHtml(request.user.city || '')}</p>
+                        ${request.message ? `<p class="text-sm text-gray-700 mt-2 italic">"${escapeHtml(request.message)}"</p>` : ''}
+                        <p class="text-xs text-gray-400 mt-2">Poslato: ${date}</p>
+                    </div>
+                    ${actions}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updatePendingBadge(requests) {
+    const badge = document.getElementById('pendingRequestsBadge');
+    const pendingCount = requests.filter(r => r.status === 'pending').length;
+    
+    if (pendingCount > 0) {
+        badge.textContent = pendingCount;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+async function approveJoinRequest(requestId) {
+    if (!confirm('Da li ste sigurni da želite da odobrite ovaj zahtev?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`{{ route("buildings.approveJoinRequest", [$building->id, 0]) }}`.replace('/0/odobri', `/${requestId}/odobri`), {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            await refreshJoinRequests();
+            // Reload member list if visible
+            location.reload();
+        } else {
+            showNotification(data.message || 'Greška pri odobravanju zahteva', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri odobravanju zahteva', 'error');
+    }
+}
+
+async function rejectJoinRequest(requestId) {
+    if (!confirm('Da li ste sigurni da želite da odbijete ovaj zahtev?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`{{ route("buildings.rejectJoinRequest", [$building->id, 0]) }}`.replace('/0/odbij', `/${requestId}/odbij`), {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            await refreshJoinRequests();
+        } else {
+            showNotification(data.message || 'Greška pri odbijanju zahteva', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri odbijanju zahteva', 'error');
+    }
+}
+
+// Proveri status zahteva pri učitavanju stranice (samo za ne-članove)
+@if(!$building->hasUser(auth()->user()))
+document.addEventListener('DOMContentLoaded', function() {
+    checkJoinRequestStatus();
+});
+@endif
+
+// Proveri broj pending zahteva za manager-a pri učitavanju stranice (samo badge)
+@if($building->isManager(auth()->user()))
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await fetch('{{ route("buildings.joinRequests", $building->id) }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            updatePendingBadge(data.data);
+        }
+    } catch (error) {
+        console.error('Error loading join requests count:', error);
+    }
+});
+@endif
 </script>
 @endsection

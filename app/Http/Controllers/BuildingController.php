@@ -478,9 +478,9 @@ class BuildingController extends Controller
     }
 
     /**
-     * Korisnik se samouključuje u zgradu (samo ako je adresa ista)
+     * Korisnik šalje zahtev za pridruživanje zgradi (samo ako je adresa ista)
      */
-    public function selfJoin(Building $building): JsonResponse
+    public function selfJoin(Request $request, Building $building): JsonResponse
     {
         $user = Auth::user();
 
@@ -502,17 +502,34 @@ class BuildingController extends Controller
             ], 403);
         }
 
-        // Dodaj korisnika kao resident
-        $building->users()->attach($user->id, [
-            'role_in_building' => 'resident'
-        ]);
+        // Proveri da li već postoji pending zahtev
+        $existingRequest = \App\Models\BuildingJoinRequest::where('building_id', $building->id)
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->first();
 
-        $building->load(['users', 'apartments']);
+        if ($existingRequest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Već imate aktivno zahtev za pridruživanje ovoj zgradi.'
+            ], 422);
+        }
+
+        // Kreiraj zahtev za pridruživanje
+        $joinRequest = \App\Models\BuildingJoinRequest::create([
+            'building_id' => $building->id,
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'message' => $request->input('message', null)
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Uspešno ste se pridružili zgradi "' . $building->name . '"',
-            'data' => $building
+            'message' => 'Zahtev za pridruživanje zgradi je poslat. Manager će ga pregledati.',
+            'data' => [
+                'request' => $joinRequest->load('user:id,name,email'),
+                'status' => 'pending'
+            ]
         ]);
     }
 
@@ -569,6 +586,168 @@ class BuildingController extends Controller
             'success' => true,
             'message' => 'Korisnik "' . $userToAdd->name . '" je uspešno dodat u zgradu',
             'data' => $userToAdd
+        ]);
+    }
+
+    /**
+     * Prikazuje sve zahteve za pridruživanje zgradi (za managera)
+     */
+    public function getJoinRequests(Building $building): JsonResponse
+    {
+        // Proverava da li je korisnik manager zgrade
+        if (!$building->isManager(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nemate dozvolu za pregled zahteva.'
+            ], 403);
+        }
+
+        $requests = $building->joinRequests()
+            ->with('user:id,name,email,address,neighborhood,city')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $requests
+        ]);
+    }
+
+    /**
+     * Odobrava zahtev za pridruživanje zgradi
+     */
+    public function approveJoinRequest(Building $building, \App\Models\BuildingJoinRequest $joinRequest): JsonResponse
+    {
+        // Proverava da li je korisnik manager zgrade
+        if (!$building->isManager(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nemate dozvolu za odobravanje zahteva.'
+            ], 403);
+        }
+
+        // Proverava da li zahtev pripada ovoj zgradi
+        if ($joinRequest->building_id !== $building->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Zahtev ne pripada ovoj zgradi.'
+            ], 422);
+        }
+
+        // Proverava da li je zahtev pending
+        if ($joinRequest->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Zahtev je već obrađen.'
+            ], 422);
+        }
+
+        // Proverava da li korisnik već postoji u zgradi
+        if ($building->hasUser($joinRequest->user)) {
+            // Ažuriraj status zahteva na approved
+            $joinRequest->update(['status' => 'approved']);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Korisnik je već član zgrade.'
+            ], 422);
+        }
+
+        // Dodaj korisnika u zgradu
+        $building->users()->attach($joinRequest->user_id, [
+            'role_in_building' => 'resident'
+        ]);
+
+        // Ažuriraj status zahteva
+        $joinRequest->update(['status' => 'approved']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Zahtev je odobren i korisnik je dodat u zgradu.',
+            'data' => [
+                'request' => $joinRequest->load('user:id,name,email'),
+                'building' => $building->load('users')
+            ]
+        ]);
+    }
+
+    /**
+     * Odbija zahtev za pridruživanje zgradi
+     */
+    public function rejectJoinRequest(Building $building, \App\Models\BuildingJoinRequest $joinRequest): JsonResponse
+    {
+        // Proverava da li je korisnik manager zgrade
+        if (!$building->isManager(Auth::user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nemate dozvolu za odbijanje zahteva.'
+            ], 403);
+        }
+
+        // Proverava da li zahtev pripada ovoj zgradi
+        if ($joinRequest->building_id !== $building->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Zahtev ne pripada ovoj zgradi.'
+            ], 422);
+        }
+
+        // Proverava da li je zahtev pending
+        if ($joinRequest->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Zahtev je već obrađen.'
+            ], 422);
+        }
+
+        // Ažuriraj status zahteva
+        $joinRequest->update(['status' => 'rejected']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Zahtev je odbijen.',
+            'data' => $joinRequest->load('user:id,name,email')
+        ]);
+    }
+
+    /**
+     * Proverava status zahteva korisnika za zgradu
+     */
+    public function getJoinRequestStatus(Building $building): JsonResponse
+    {
+        $user = Auth::user();
+
+        // Proverava da li je korisnik već član zgrade
+        if ($building->hasUser($user)) {
+            return response()->json([
+                'success' => true,
+                'is_member' => true,
+                'message' => 'Već ste član ove zgrade.'
+            ]);
+        }
+
+        // Pronađi najnoviji zahtev
+        $latestRequest = \App\Models\BuildingJoinRequest::where('building_id', $building->id)
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($latestRequest) {
+            return response()->json([
+                'success' => true,
+                'is_member' => false,
+                'request' => [
+                    'status' => $latestRequest->status,
+                    'created_at' => $latestRequest->created_at,
+                    'updated_at' => $latestRequest->updated_at
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'is_member' => false,
+            'has_request' => false
         ]);
     }
 }

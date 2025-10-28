@@ -235,6 +235,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/stambene-zajednice/{building}/eligible-users', [BuildingController::class, 'getEligibleUsers'])->name('buildings.eligibleUsers');
     Route::post('/stambene-zajednice/{building}/add-resident', [BuildingController::class, 'addResident'])->name('buildings.addResident');
     
+    // Join request routes
+    Route::get('/stambene-zajednice/{building}/zahtevi', [BuildingController::class, 'getJoinRequests'])->name('buildings.joinRequests');
+    Route::get('/stambene-zajednice/{building}/status-zahteva', [BuildingController::class, 'getJoinRequestStatus'])->name('buildings.joinRequestStatus');
+    Route::post('/stambene-zajednice/{building}/zahtevi/{joinRequest}/odobri', [BuildingController::class, 'approveJoinRequest'])->name('buildings.approveJoinRequest');
+    Route::post('/stambene-zajednice/{building}/zahtevi/{joinRequest}/odbij', [BuildingController::class, 'rejectJoinRequest'])->name('buildings.rejectJoinRequest');
+    
     // Announcement comments routes
     Route::get('/stambene-zajednice/{building}/objave/{announcement}/komentari', [AnnouncementCommentController::class, 'index'])->name('announcements.comments.index');
     Route::post('/stambene-zajednice/{building}/objave/{announcement}/komentari', [AnnouncementCommentController::class, 'store'])->name('announcements.comments.store');

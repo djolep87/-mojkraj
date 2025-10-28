@@ -315,31 +315,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Show modal when clicking "Dodaj zgradu"
-    const addButtons = document.querySelectorAll('a[href="{{ route("buildings.store") }}"]');
-    addButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            document.getElementById('modalTitle').textContent = 'Dodaj zgradu';
-            document.getElementById('buildingForm').action = '{{ route("buildings.store") }}';
-            document.getElementById('buildingForm').method = 'POST';
-            
-            // Reset form
-            document.getElementById('name').value = '';
-            document.getElementById('address').value = '';
-            document.getElementById('city').value = '{{ auth()->user()->city }}';
-            document.getElementById('neighborhood').value = '{{ auth()->user()->neighborhood }}';
-            
-            // Reset form state
-            const submitButton = document.querySelector('#buildingForm button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Sačuvaj';
-            }
-            
-            document.getElementById('buildingModal').classList.remove('hidden');
+    // Show modal when clicking "Dodaj zgradu" buttons on THIS page only
+    // Select only buttons within the main content area, not in navigation menus
+    const contentArea = document.querySelector('.min-h-screen.bg-gray-50');
+    if (contentArea) {
+        const addButtons = contentArea.querySelectorAll('a[href="{{ route("buildings.store") }}"]');
+        addButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('modalTitle').textContent = 'Dodaj zgradu';
+                document.getElementById('buildingForm').action = '{{ route("buildings.store") }}';
+                document.getElementById('buildingForm').method = 'POST';
+                
+                // Reset form
+                document.getElementById('name').value = '';
+                document.getElementById('address').value = '';
+                document.getElementById('city').value = '{{ auth()->user()->city }}';
+                document.getElementById('neighborhood').value = '{{ auth()->user()->neighborhood }}';
+                
+                // Reset form state
+                const submitButton = document.querySelector('#buildingForm button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Sačuvaj';
+                }
+                
+                document.getElementById('buildingModal').classList.remove('hidden');
+            });
         });
-    });
+    }
 
     // Handle form submission with error display
     const buildingForm = document.getElementById('buildingForm');

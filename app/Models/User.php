@@ -95,4 +95,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(VoteResult::class);
     }
+
+    public function buildingJoinRequests()
+    {
+        return $this->hasMany(BuildingJoinRequest::class);
+    }
 }

@@ -49,6 +49,16 @@ class Building extends Model
             ->withTimestamps();
     }
 
+    public function joinRequests(): HasMany
+    {
+        return $this->hasMany(BuildingJoinRequest::class);
+    }
+
+    public function pendingJoinRequests(): HasMany
+    {
+        return $this->hasMany(BuildingJoinRequest::class)->where('status', 'pending');
+    }
+
     public function residents(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'building_user')
