@@ -229,9 +229,28 @@
                     @endif
                 </div>
 
-                <!-- Other tabs will be loaded via AJAX -->
+                <!-- Reports Tab -->
                 <div id="reports-tab" class="tab-content hidden">
-                    <p class="text-gray-500 text-center py-8">Učitavanje prijava...</p>
+                    <div class="mb-6 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Prijave kvarova</h3>
+                        <button onclick="openReportModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Prijavi kvar
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Kliknite na prijavu da biste videli detalje</p>
+                    </div>
+                    
+                    <div id="reports-list" class="space-y-3">
+                        <div class="text-center py-8">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                            <p class="mt-2 text-gray-500">Učitavanje prijava...</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="expenses-tab" class="tab-content hidden">
@@ -242,12 +261,144 @@
                     <p class="text-gray-500 text-center py-8">Učitavanje glasanja...</p>
                 </div>
 
+                <!-- Announcements Tab -->
                 <div id="announcements-tab" class="tab-content hidden">
-                    <p class="text-gray-500 text-center py-8">Učitavanje objava...</p>
+                    @if($building->isManager(auth()->user()))
+                        <div class="mb-6 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">Objave</h3>
+                            <button onclick="openAnnouncementModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Nova objava
+                            </button>
+                        </div>
+                    @else
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Objave</h3>
+                        </div>
+                    @endif
+                    
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Kliknite na objavu da biste videli detalje</p>
+                    </div>
+                    
+                    <div id="announcements-list" class="space-y-3">
+                        <div class="text-center py-8">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                            <p class="mt-2 text-gray-500">Učitavanje objava...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         @endif
+    </div>
+</div>
+
+<!-- Announcement Modal -->
+<div id="announcementModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Nova objava</h3>
+                <button onclick="closeAnnouncementModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="announcementForm" method="POST">
+                @csrf
+                <div class="space-y-4">
+                    <div>
+                        <label for="announcement_title" class="block text-sm font-medium text-gray-700 mb-1">Naslov objave</label>
+                        <input type="text" id="announcement_title" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="npr. Važna obaveštenje">
+                    </div>
+                    
+                    <div>
+                        <label for="announcement_content" class="block text-sm font-medium text-gray-700 mb-1">Sadržaj objave</label>
+                        <textarea id="announcement_content" name="content" rows="6" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Unesite tekst objave..."></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Maksimalno 5000 karaktera</p>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="announcement_pinned" name="pinned" value="1" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="announcement_pinned" class="ml-2 text-sm text-gray-700">Prikvači objavu na vrh</label>
+                    </div>
+                    
+                    <div class="flex space-x-3 pt-4">
+                        <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200">
+                            Objavi
+                        </button>
+                        <button type="button" onclick="closeAnnouncementModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                            Otkaži
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div id="reportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Prijavi kvar</h3>
+                <button onclick="closeReportModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="reportForm" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="space-y-4">
+                    <div>
+                        <label for="report_title" class="block text-sm font-medium text-gray-700 mb-1">Naslov prijave</label>
+                        <input type="text" id="report_title" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="npr. Prokišnjavanje krova">
+                    </div>
+                    
+                    <div>
+                        <label for="report_description" class="block text-sm font-medium text-gray-700 mb-1">Opis kvara</label>
+                        <textarea id="report_description" name="description" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Detaljno opišite problem..."></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="report_photo" class="block text-sm font-medium text-gray-700 mb-1">Slika (opciono)</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors">
+                            <div class="space-y-1 text-center">
+                                <svg id="upload-icon" class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="report_photo" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                        <span>Izaberi fajl</span>
+                                        <input id="report_photo" name="photo" type="file" accept="image/*" class="sr-only" onchange="previewReportImage(this)">
+                                    </label>
+                                    <p class="pl-1">ili prevucite ovde</p>
+                                </div>
+                                <p class="text-xs text-gray-500">PNG, JPG, GIF do 2MB</p>
+                                <img id="photo-preview" class="mt-2 max-w-full max-h-48 mx-auto rounded-lg hidden" alt="Preview">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3 pt-4">
+                        <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200">
+                            Prijavi kvar
+                        </button>
+                        <button type="button" onclick="closeReportModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                            Otkaži
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -469,13 +620,12 @@ function showTab(tabName) {
     }
 }
 
-function loadTabContent(tabName) {
+async function loadTabContent(tabName) {
     const tabContent = document.getElementById(tabName + '-tab');
     
-    // Simple implementation - in real app you'd make AJAX calls
     switch(tabName) {
         case 'reports':
-            tabContent.innerHTML = '<p class="text-gray-500 text-center py-8">Funkcionalnost prijava će biti implementirana uskoro.</p>';
+            await loadReports();
             break;
         case 'expenses':
             tabContent.innerHTML = '<p class="text-gray-500 text-center py-8">Funkcionalnost troškova će biti implementirana uskoro.</p>';
@@ -484,8 +634,614 @@ function loadTabContent(tabName) {
             tabContent.innerHTML = '<p class="text-gray-500 text-center py-8">Funkcionalnost glasanja će biti implementirana uskoro.</p>';
             break;
         case 'announcements':
-            tabContent.innerHTML = '<p class="text-gray-500 text-center py-8">Funkcionalnost objava će biti implementirana uskoro.</p>';
+            await loadAnnouncements();
             break;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function loadReports() {
+    const reportsList = document.getElementById('reports-list');
+    if (!reportsList) return;
+    
+    reportsList.innerHTML = `
+        <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <p class="mt-2 text-gray-500">Učitavanje prijava...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch('{{ route("reports.index", $building->id) }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        const isManager = {{ $building->isManager(auth()->user()) ? 'true' : 'false' }};
+        
+        if (data.success && data.data.data.length > 0) {
+            reportsList.innerHTML = data.data.data.map(report => `
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-lg hover:border-indigo-300 transition-all cursor-pointer group" onclick="toggleReportDetails(${report.id})">
+                    <div class="p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">${escapeHtml(report.title)}</h4>
+                                <p class="text-sm text-gray-500">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    ${escapeHtml(report.user.name)} • 
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    ${new Date(report.created_at).toLocaleDateString('sr-RS')}
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="px-3 py-1 text-xs font-medium rounded-full ${report.status === 'open' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                                    ${report.status === 'open' ? 'Otvoreno' : 'Zatvoreno'}
+                                </span>
+                                <svg id="report-arrow-${report.id}" class="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Details (hidden by default) -->
+                    <div id="report-details-${report.id}" class="hidden border-t border-gray-200 bg-gradient-to-br from-gray-50 to-white">
+                        <div class="p-6 space-y-4">
+                            <div class="bg-white rounded-lg p-4 border border-gray-100">
+                                <h5 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Opis kvara:
+                                </h5>
+                                <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">${escapeHtml(report.description)}</p>
+                            </div>
+                            
+                            ${report.photo ? `
+                                <div class="bg-white rounded-lg p-4 border border-gray-100">
+                                    <h5 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        Pridružena slika:
+                                    </h5>
+                                    <div class="relative">
+                                        <img src="/storage/${report.photo}" alt="Prijava slika" class="max-w-full h-auto rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity shadow-sm" onclick="event.stopPropagation(); showImageModal('/storage/${report.photo}')">
+                                        <div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                                            Klik za uvećanje
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                                <p class="text-xs text-gray-500 flex items-center">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Kreirano: ${new Date(report.created_at).toLocaleString('sr-RS')}
+                                </p>
+                                ${report.status === 'open' && isManager ? `
+                                    <button onclick="event.stopPropagation(); closeReport(${report.id})" class="text-sm bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center shadow-sm">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Označi kao rešeno
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            reportsList.innerHTML = `
+                <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
+                    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="text-gray-500">Još uvek nema prijava kvarova.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading reports:', error);
+        reportsList.innerHTML = '<p class="text-red-500 text-center py-8">Greška pri učitavanju prijava.</p>';
+    }
+}
+
+function openReportModal() {
+    document.getElementById('reportModal').classList.remove('hidden');
+    document.getElementById('reportForm').reset();
+    document.getElementById('photo-preview').classList.add('hidden');
+    document.getElementById('upload-icon').classList.remove('hidden');
+}
+
+function closeReportModal() {
+    document.getElementById('reportModal').classList.add('hidden');
+    document.getElementById('reportForm').reset();
+    document.getElementById('photo-preview').classList.add('hidden');
+    document.getElementById('upload-icon').classList.remove('hidden');
+}
+
+function previewReportImage(input) {
+    const preview = document.getElementById('photo-preview');
+    const uploadIcon = document.getElementById('upload-icon');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+            uploadIcon.classList.add('hidden');
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.classList.add('hidden');
+        uploadIcon.classList.remove('hidden');
+    }
+}
+
+function toggleReportDetails(reportId) {
+    const details = document.getElementById(`report-details-${reportId}`);
+    const arrow = document.getElementById(`report-arrow-${reportId}`);
+    
+    if (details.classList.contains('hidden')) {
+        // Close all other open reports
+        document.querySelectorAll('[id^="report-details-"]').forEach(el => {
+            if (!el.id.includes(reportId)) {
+                el.classList.add('hidden');
+                const otherReportId = el.id.replace('report-details-', '');
+                const otherArrow = document.getElementById(`report-arrow-${otherReportId}`);
+                if (otherArrow) {
+                    otherArrow.classList.remove('rotate-180');
+                }
+            }
+        });
+        
+        // Open this report
+        details.classList.remove('hidden');
+        if (arrow) {
+            arrow.classList.add('rotate-180');
+        }
+    } else {
+        // Close this report
+        details.classList.add('hidden');
+        if (arrow) {
+            arrow.classList.remove('rotate-180');
+        }
+    }
+}
+
+function showImageModal(imageSrc) {
+    // Create image modal
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center';
+    modal.onclick = () => modal.remove();
+    
+    modal.innerHTML = `
+        <div class="relative max-w-4xl max-h-full p-4">
+            <button onclick="this.closest('.fixed').remove()" class="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <img src="${imageSrc}" alt="Prijava slika" class="max-w-full max-h-screen rounded-lg" onclick="event.stopPropagation()">
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// Handle report form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const reportForm = document.getElementById('reportForm');
+    if (reportForm) {
+        reportForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(reportForm);
+            const submitButton = reportForm.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Prijavljivanje...';
+            
+            try {
+                const response = await fetch('{{ route("reports.store", $building->id) }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    closeReportModal();
+                    await loadReports();
+                } else {
+                    if (data.errors) {
+                        let errorMsg = '';
+                        Object.keys(data.errors).forEach(key => {
+                            if (Array.isArray(data.errors[key])) {
+                                errorMsg += data.errors[key][0] + '\n';
+                            } else {
+                                errorMsg += data.errors[key] + '\n';
+                            }
+                        });
+                        showNotification(errorMsg.trim(), 'error');
+                    } else {
+                        showNotification(data.message || 'Greška pri prijavljivanju kvara', 'error');
+                    }
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Desila se greška pri prijavljivanju kvara', 'error');
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
+        });
+    }
+    
+    // Close report modal when clicking outside
+    const reportModal = document.getElementById('reportModal');
+    if (reportModal) {
+        reportModal.addEventListener('click', function(e) {
+            if (e.target === reportModal) {
+                closeReportModal();
+            }
+        });
+    }
+    
+    // Handle announcement form submission
+    const announcementForm = document.getElementById('announcementForm');
+    if (announcementForm) {
+        announcementForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(announcementForm);
+            // Handle pinned checkbox - if not checked, explicitly set to false
+            const pinnedCheckbox = document.getElementById('announcement_pinned');
+            formData.delete('pinned'); // Remove first to avoid duplicates
+            formData.append('pinned', pinnedCheckbox.checked ? '1' : '0');
+            
+            const submitButton = announcementForm.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Objavljivanje...';
+            
+            try {
+                const response = await fetch('{{ route("announcements.store", $building->id) }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    closeAnnouncementModal();
+                    await loadAnnouncements();
+                } else {
+                    if (data.errors) {
+                        let errorMsg = '';
+                        Object.keys(data.errors).forEach(key => {
+                            if (Array.isArray(data.errors[key])) {
+                                errorMsg += data.errors[key][0] + '\n';
+                            } else {
+                                errorMsg += data.errors[key] + '\n';
+                            }
+                        });
+                        showNotification(errorMsg.trim(), 'error');
+                    } else {
+                        showNotification(data.message || 'Greška pri objavljivanju', 'error');
+                    }
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Desila se greška pri objavljivanju', 'error');
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
+        });
+    }
+    
+    // Close announcement modal when clicking outside
+    const announcementModal = document.getElementById('announcementModal');
+    if (announcementModal) {
+        announcementModal.addEventListener('click', function(e) {
+            if (e.target === announcementModal) {
+                closeAnnouncementModal();
+            }
+        });
+    }
+});
+
+async function loadAnnouncements() {
+    const announcementsList = document.getElementById('announcements-list');
+    if (!announcementsList) return;
+    
+    announcementsList.innerHTML = `
+        <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <p class="mt-2 text-gray-500">Učitavanje objava...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch('{{ route("announcements.index", $building->id) }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        const isManager = {{ $building->isManager(auth()->user()) ? 'true' : 'false' }};
+        
+        if (data.success && data.data.data.length > 0) {
+            announcementsList.innerHTML = data.data.data.map(announcement => `
+                <div class="bg-white rounded-lg border ${announcement.pinned ? 'border-indigo-300 border-2' : 'border-gray-200'} shadow-sm hover:shadow-lg hover:border-indigo-300 transition-all cursor-pointer group" onclick="toggleAnnouncementDetails(${announcement.id})">
+                    <div class="p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    ${announcement.pinned ? `
+                                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                        </svg>
+                                        <span class="text-xs text-indigo-600 font-medium">PRIKVAČENO</span>
+                                    ` : ''}
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">${escapeHtml(announcement.title)}</h4>
+                                <p class="text-sm text-gray-500">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    ${escapeHtml(announcement.user?.name || 'N/A')} • 
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    ${new Date(announcement.created_at).toLocaleDateString('sr-RS')} • 
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    ${announcement.comments?.length || 0} komentara
+                                </p>
+                            </div>
+                            <svg id="announcement-arrow-${announcement.id}" class="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Details (hidden by default) -->
+                    <div id="announcement-details-${announcement.id}" class="hidden border-t border-gray-200 bg-gradient-to-br from-gray-50 to-white">
+                        <div class="p-6 space-y-4">
+                            <div class="bg-white rounded-lg p-4 border border-gray-100">
+                                <h5 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                    </svg>
+                                    Sadržaj objave:
+                                </h5>
+                                <div class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                                    ${escapeHtml(announcement.content)}
+                                </div>
+                            </div>
+                            
+                            <!-- Comments Section -->
+                            <div class="bg-white rounded-lg p-4 border border-gray-100">
+                                <h5 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    Komentari (${announcement.comments?.length || 0}):
+                                </h5>
+                                
+                                <!-- Existing Comments -->
+                                <div id="comments-${announcement.id}" class="space-y-3 mb-4">
+                                    ${(announcement.comments || []).length > 0 ? 
+                                        (announcement.comments || []).map(comment => `
+                                            <div class="bg-gray-50 rounded-lg p-3">
+                                                <div class="flex items-start justify-between mb-1">
+                                                    <p class="font-medium text-sm text-gray-900">${escapeHtml(comment.user?.name || 'N/A')}</p>
+                                                    <p class="text-xs text-gray-500">${new Date(comment.created_at).toLocaleDateString('sr-RS')}</p>
+                                                </div>
+                                                <p class="text-gray-700 text-sm whitespace-pre-wrap">${escapeHtml(comment.content)}</p>
+                                            </div>
+                                        `).join('')
+                                        : '<p class="text-sm text-gray-500 italic">Nema komentara. Budite prvi koji će komentarisati!</p>'
+                                    }
+                                </div>
+                                
+                                <!-- Add Comment Form -->
+                                <div class="border-t border-gray-200 pt-3 mt-4">
+                                    <textarea id="comment-${announcement.id}" rows="2" placeholder="Napišite komentar..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm mb-2" onclick="event.stopPropagation()"></textarea>
+                                    <button onclick="event.stopPropagation(); addComment(${announcement.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+                                        Dodaj komentar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                                <p class="text-xs text-gray-500 flex items-center">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Kreirano: ${new Date(announcement.created_at).toLocaleString('sr-RS')}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            announcementsList.innerHTML = `
+                <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
+                    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                    <p class="text-gray-500">Još uvek nema objava.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading announcements:', error);
+        announcementsList.innerHTML = '<p class="text-red-500 text-center py-8">Greška pri učitavanju objava.</p>';
+    }
+}
+
+function toggleAnnouncementDetails(announcementId) {
+    const details = document.getElementById(`announcement-details-${announcementId}`);
+    const arrow = document.getElementById(`announcement-arrow-${announcementId}`);
+    
+    if (details.classList.contains('hidden')) {
+        // Close all other open announcements
+        document.querySelectorAll('[id^="announcement-details-"]').forEach(el => {
+            if (!el.id.includes(announcementId.toString())) {
+                el.classList.add('hidden');
+                const otherAnnouncementId = el.id.replace('announcement-details-', '');
+                const otherArrow = document.getElementById(`announcement-arrow-${otherAnnouncementId}`);
+                if (otherArrow) {
+                    otherArrow.classList.remove('rotate-180');
+                }
+            }
+        });
+        
+        // Open this announcement
+        details.classList.remove('hidden');
+        if (arrow) {
+            arrow.classList.add('rotate-180');
+        }
+    } else {
+        // Close this announcement
+        details.classList.add('hidden');
+        if (arrow) {
+            arrow.classList.remove('rotate-180');
+        }
+    }
+}
+
+function openAnnouncementModal() {
+    document.getElementById('announcementModal').classList.remove('hidden');
+    document.getElementById('announcementForm').reset();
+}
+
+function closeAnnouncementModal() {
+    document.getElementById('announcementModal').classList.add('hidden');
+    document.getElementById('announcementForm').reset();
+}
+
+async function addComment(announcementId) {
+    const textarea = document.getElementById(`comment-${announcementId}`);
+    const content = textarea.value.trim();
+    
+    if (!content) {
+        showNotification('Unesite tekst komentara', 'error');
+        return;
+    }
+    
+    const commentForm = textarea.closest('.border-t');
+    const submitButton = commentForm.querySelector('button');
+    const originalText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Dodavanje...';
+    
+    try {
+        const response = await fetch(`{{ route('announcements.comments.store', [$building->id, 0]) }}`.replace('/0/komentari', `/${announcementId}/komentari`), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ content: content })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            textarea.value = '';
+            showNotification('Komentar je dodat', 'success');
+            // Keep announcement open after reload
+            const wasOpen = !document.getElementById(`announcement-details-${announcementId}`).classList.contains('hidden');
+            await loadAnnouncements();
+            // Reopen if it was open
+            if (wasOpen) {
+                setTimeout(() => toggleAnnouncementDetails(announcementId), 100);
+            }
+        } else {
+            showNotification(data.message || 'Greška pri dodavanju komentara', 'error');
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri dodavanju komentara', 'error');
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+    }
+}
+
+async function closeReport(reportId) {
+    if (!confirm('Da li ste sigurni da želite da označite ovu prijavu kao rešenu?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`{{ route('reports.close', [$building->id, 0]) }}`.replace('/0/close', `/${reportId}/close`), {
+            method: 'PATCH',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            await loadReports();
+        } else {
+            showNotification(data.message || 'Greška pri zatvaranju prijave', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri zatvaranju prijave', 'error');
     }
 }
 </script>

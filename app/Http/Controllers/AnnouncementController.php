@@ -65,6 +65,8 @@ class AnnouncementController extends Controller
         $data = $request->all();
         $data['building_id'] = $building->id;
         $data['user_id'] = Auth::id();
+        // Convert pinned to boolean
+        $data['pinned'] = $request->has('pinned') && ($request->pinned === '1' || $request->pinned === true || $request->pinned === 'on');
 
         $announcement = Announcement::create($data);
         $announcement->load('user:id,name');
