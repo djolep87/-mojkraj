@@ -135,6 +135,16 @@
                         </div>
                     </div>
                     
+                    <!-- Stambene zajednice -->
+                    @if(auth()->check())
+                    <a href="{{ route('buildings.index') }}" class="px-4 py-2 rounded-lg text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 font-medium transition-all duration-200 flex items-center whitespace-nowrap">
+                        <svg class="w-5 h-5 mr-1.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Zajednice
+                    </a>
+                    @endif
+                    
                     <!-- Info Dropdown -->
                     <div class="relative group">
                         <button class="px-4 py-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all duration-200 flex items-center">
@@ -274,6 +284,21 @@
                             </svg>
                             <span class="text-base">Početna</span>
                         </a>
+                        
+                        <!-- Stambene zajednice -->
+                        @if(auth()->check())
+                        <a href="{{ route('buildings.index') }}" class="flex items-center px-4 py-3 rounded-xl text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition-all duration-200 group">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-indigo-200 transition-colors">
+                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold text-sm">Stambene zajednice</div>
+                                <div class="text-xs text-gray-500">Upravljanje zgradama i stanarima</div>
+                            </div>
+                        </a>
+                        @endif
                         
                         <!-- Posts Section -->
                         <div class="space-y-1">
