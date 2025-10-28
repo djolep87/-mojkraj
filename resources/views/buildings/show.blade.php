@@ -257,8 +257,50 @@
                     <p class="text-gray-500 text-center py-8">Učitavanje troškova...</p>
                 </div>
 
+                <!-- Votes Tab -->
                 <div id="votes-tab" class="tab-content hidden">
-                    <p class="text-gray-500 text-center py-8">Učitavanje glasanja...</p>
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Glasanja u zgradi</h3>
+                        
+                        @if($building->isManager(auth()->user()))
+                            <!-- Manager Section -->
+                            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-indigo-900 mb-1">Vi ste upravnik zgrade</h4>
+                                        <p class="text-sm text-indigo-700">Možete kreirati nova glasanja za stanare zgrade.</p>
+                                    </div>
+                                    <button onclick="openVoteModal()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center shadow-md">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        Kreiraj novo glasanje
+                                    </button>
+                                </div>
+                            </div>
+                        @else
+                            <!-- Non-Manager Info -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-sm text-blue-700">Samo upravnik zgrade može kreirati nova glasanja. Kontaktirajte upravnika za kreiranje novog glasanja.</p>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-500">Kliknite na glasanje da biste videli detalje i glasali</p>
+                        </div>
+                    </div>
+                    
+                    <div id="votes-list" class="space-y-3">
+                        <div class="text-center py-8">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                            <p class="mt-2 text-gray-500">Učitavanje glasanja...</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Announcements Tab -->
@@ -293,6 +335,104 @@
             </div>
         </div>
         @endif
+    </div>
+</div>
+
+<!-- Vote Modal -->
+<div id="voteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-3xl shadow-xl rounded-lg bg-white mb-10">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900">Kreiraj novo glasanje</h3>
+                    <p class="text-sm text-gray-500 mt-1">Kreirajte glasanje za stanare zgrade sa više opcija</p>
+                </div>
+                <button onclick="closeVoteModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="voteForm" method="POST">
+                @csrf
+                <div class="space-y-4">
+                    <div>
+                        <label for="vote_title" class="block text-sm font-medium text-gray-700 mb-1">Naslov glasanja</label>
+                        <input type="text" id="vote_title" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="npr. Odabir upravnika zgrade">
+                    </div>
+                    
+                    <div>
+                        <label for="vote_description" class="block text-sm font-medium text-gray-700 mb-1">Opis glasanja</label>
+                        <textarea id="vote_description" name="description" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Detaljno opišite predmet glasanja..."></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Maksimalno 2000 karaktera</p>
+                    </div>
+                    
+                    <div>
+                        <label for="vote_deadline" class="block text-sm font-medium text-gray-700 mb-1">Rok za glasanje</label>
+                        <input type="datetime-local" id="vote_deadline" name="deadline" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" min="{{ date('Y-m-d\TH:i') }}">
+                        <p class="mt-1 text-xs text-gray-500">Izaberite datum i vreme do kada je glasanje aktivno</p>
+                    </div>
+                    
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-medium text-gray-700">Opcije za glasanje</label>
+                            <button type="button" onclick="addVoteOption()" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                                + Dodaj opciju
+                            </button>
+                        </div>
+                        <div id="vote-options-list" class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="text" name="options[]" required class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Opcija 1">
+                                <button type="button" onclick="removeVoteOption(this)" class="text-red-600 hover:text-red-700 p-2 hidden">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="text" name="options[]" required class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Opcija 2">
+                                <button type="button" onclick="removeVoteOption(this)" class="text-red-600 hover:text-red-700 p-2 hidden">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Minimum 2 opcije (maksimalno 10)</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="text-xs text-blue-700">
+                                <p class="font-medium mb-1">Savet:</p>
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Unesite jasno i konkretno pitanje</li>
+                                    <li>Dodajte najmanje 2 opcije za glasanje</li>
+                                    <li>Postavite razuman rok za glasanje</li>
+                                    <li>Stanari mogu glasati samo jednom</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3 pt-4 border-t border-gray-200 mt-4">
+                        <button type="submit" class="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 shadow-md flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Kreiraj glasanje
+                        </button>
+                        <button type="button" onclick="closeVoteModal()" class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                            Otkaži
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -631,7 +771,7 @@ async function loadTabContent(tabName) {
             tabContent.innerHTML = '<p class="text-gray-500 text-center py-8">Funkcionalnost troškova će biti implementirana uskoro.</p>';
             break;
         case 'votes':
-            tabContent.innerHTML = '<p class="text-gray-500 text-center py-8">Funkcionalnost glasanja će biti implementirana uskoro.</p>';
+            await loadVotes();
             break;
         case 'announcements':
             await loadAnnouncements();
@@ -984,6 +1124,104 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Handle vote form submission
+    const voteForm = document.getElementById('voteForm');
+    if (voteForm) {
+        voteForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(voteForm);
+            const options = [];
+            formData.getAll('options[]').forEach(option => {
+                if (option.trim()) {
+                    options.push(option.trim());
+                }
+            });
+            
+            if (options.length < 2) {
+                showNotification('Potrebno je najmanje 2 opcije', 'error');
+                return;
+            }
+            
+            const submitButton = voteForm.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Kreiranje...';
+            
+            try {
+                const response = await fetch('{{ route("votes.store", $building->id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({
+                        title: formData.get('title'),
+                        description: formData.get('description'),
+                        deadline: formData.get('deadline'),
+                        options: options
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    closeVoteModal();
+                    
+                    // Make sure votes tab is visible and reload
+                    const votesTab = document.getElementById('votes-tab');
+                    if (votesTab && votesTab.classList.contains('hidden')) {
+                        // Activate votes tab if not already active
+                        document.querySelectorAll('.tab-button').forEach(btn => {
+                            if (btn.getAttribute('onclick')?.includes('votes')) {
+                                btn.click();
+                            }
+                        });
+                    }
+                    
+                    // Reload votes after creation
+                    setTimeout(async () => {
+                        await loadVotes();
+                    }, 300);
+                } else {
+                    if (data.errors) {
+                        let errorMsg = '';
+                        Object.keys(data.errors).forEach(key => {
+                            if (Array.isArray(data.errors[key])) {
+                                errorMsg += data.errors[key][0] + '\n';
+                            } else {
+                                errorMsg += data.errors[key] + '\n';
+                            }
+                        });
+                        showNotification(errorMsg.trim(), 'error');
+                    } else {
+                        showNotification(data.message || 'Greška pri kreiranju glasanja', 'error');
+                    }
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Desila se greška pri kreiranju glasanja', 'error');
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
+        });
+    }
+    
+    // Close vote modal when clicking outside
+    const voteModal = document.getElementById('voteModal');
+    if (voteModal) {
+        voteModal.addEventListener('click', function(e) {
+            if (e.target === voteModal) {
+                closeVoteModal();
+            }
+        });
+    }
 });
 
 async function loadAnnouncements() {
@@ -1213,6 +1451,344 @@ async function addComment(announcementId) {
         showNotification('Desila se greška pri dodavanju komentara', 'error');
         submitButton.disabled = false;
         submitButton.textContent = originalText;
+    }
+}
+
+async function loadVotes() {
+    const votesList = document.getElementById('votes-list');
+    if (!votesList) {
+        console.error('votes-list element not found');
+        return;
+    }
+    
+    votesList.innerHTML = `
+        <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <p class="mt-2 text-gray-500">Učitavanje glasanja...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch('{{ route("votes.index", $building->id) }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+                const data = await response.json();
+        console.log('Votes data received:', data);
+        
+        // Check if data structure is correct - handle both paginated and non-paginated responses
+        let votes = [];
+        if (data.success && data.data) {
+            if (Array.isArray(data.data)) {
+                votes = data.data;
+            } else if (data.data.data && Array.isArray(data.data.data)) {
+                votes = data.data.data;
+            } else if (data.data.items && Array.isArray(data.data.items)) {
+                votes = data.data.items;
+            }
+        }
+        
+        console.log('Parsed votes:', votes);
+        console.log('Votes count:', votes.length);
+        
+        if (data.success && votes.length > 0) {
+            votesList.innerHTML = votes.map(vote => {
+                const isActive = vote.is_active;
+                const userHasVoted = vote.user_has_voted;
+                const deadline = new Date(vote.deadline);
+                const now = new Date();
+                const timeRemaining = deadline - now;
+                const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                
+                return `
+                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-lg hover:border-indigo-300 transition-all cursor-pointer group" onclick="toggleVoteDetails(${vote.id})">
+                        <div class="p-4">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        ${isActive ? `
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                                Aktivno
+                                            </span>
+                                        ` : `
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                                Završeno
+                                            </span>
+                                        `}
+                                        ${userHasVoted ? `
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                                Već ste glasali
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">${escapeHtml(vote.title)}</h4>
+                                    <p class="text-sm text-gray-500 mb-2">
+                                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        Rok: ${deadline.toLocaleDateString('sr-RS')} ${deadline.toLocaleTimeString('sr-RS', {hour: '2-digit', minute: '2-digit'})}
+                                        ${isActive && days >= 0 ? ` • ${days}d ${hours}h preostalo` : ''}
+                                    </p>
+                                    <p class="text-xs text-gray-400 line-clamp-2">${escapeHtml(vote.description)}</p>
+                                </div>
+                                <svg id="vote-arrow-${vote.id}" class="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <!-- Details (hidden by default) -->
+                        <div id="vote-details-${vote.id}" class="hidden border-t border-gray-200 bg-gradient-to-br from-gray-50 to-white">
+                            <div class="p-6 space-y-4">
+                                <div class="bg-white rounded-lg p-4 border border-gray-100">
+                                    <h5 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Opis glasanja:
+                                    </h5>
+                                    <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">${escapeHtml(vote.description)}</p>
+                                </div>
+                                
+                                ${isActive && !userHasVoted ? `
+                                    <div class="bg-white rounded-lg p-4 border border-gray-100" onclick="event.stopPropagation()">
+                                        <h5 class="text-sm font-semibold text-gray-800 mb-3">Vaš glas:</h5>
+                                        <div class="space-y-2">
+                                            ${vote.options.map(option => `
+                                                <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                                    <input type="radio" name="vote-option-${vote.id}" value="${option.id}" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                                                    <span class="ml-3 text-gray-700">${escapeHtml(option.option_text)}</span>
+                                                </label>
+                                            `).join('')}
+                                        </div>
+                                        <button onclick="event.stopPropagation(); submitVote(${vote.id})" class="mt-4 w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                            Pošalji glas
+                                        </button>
+                                    </div>
+                                ` : ''}
+                                
+                                ${userHasVoted || !isActive ? `
+                                    <div class="bg-white rounded-lg p-4 border border-gray-100">
+                                        <h5 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                                            <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
+                                            Rezultati glasanja:
+                                        </h5>
+                                        <div class="space-y-3">
+                                            ${vote.options.map(option => {
+                                                const voteCount = option.results?.length || 0;
+                                                const totalVotes = vote.options.reduce((sum, opt) => sum + (opt.results?.length || 0), 0);
+                                                const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+                                                return `
+                                                    <div>
+                                                        <div class="flex items-center justify-between mb-1">
+                                                            <span class="text-sm font-medium text-gray-700">${escapeHtml(option.option_text)}</span>
+                                                            <span class="text-sm text-gray-600">${voteCount} glasova (${percentage}%)</span>
+                                                        </div>
+                                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                                            <div class="bg-indigo-600 h-2 rounded-full transition-all" style="width: ${percentage}%"></div>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            }).join('')}
+                                        </div>
+                                        <p class="mt-3 text-xs text-gray-500 text-center">
+                                            Ukupno glasova: ${vote.options.reduce((sum, opt) => sum + (opt.results?.length || 0), 0)}
+                                        </p>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                                    <p class="text-xs text-gray-500 flex items-center">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Kreirano: ${new Date(vote.created_at).toLocaleString('sr-RS')}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            votesList.innerHTML = `
+                <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
+                    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-gray-500">Još uvek nema glasanja.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading votes:', error);
+        votesList.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-800 font-medium mb-2">Greška pri učitavanju glasanja</p>
+                <p class="text-red-600 text-sm">${error.message || 'Došlo je do greške. Molimo osvežite stranicu.'}</p>
+            </div>
+        `;
+    }
+}
+
+function toggleVoteDetails(voteId) {
+    const details = document.getElementById(`vote-details-${voteId}`);
+    const arrow = document.getElementById(`vote-arrow-${voteId}`);
+    
+    if (details.classList.contains('hidden')) {
+        // Close all other open votes
+        document.querySelectorAll('[id^="vote-details-"]').forEach(el => {
+            if (!el.id.includes(voteId.toString())) {
+                el.classList.add('hidden');
+                const otherVoteId = el.id.replace('vote-details-', '');
+                const otherArrow = document.getElementById(`vote-arrow-${otherVoteId}`);
+                if (otherArrow) {
+                    otherArrow.classList.remove('rotate-180');
+                }
+            }
+        });
+        
+        // Open this vote
+        details.classList.remove('hidden');
+        if (arrow) {
+            arrow.classList.add('rotate-180');
+        }
+    } else {
+        // Close this vote
+        details.classList.add('hidden');
+        if (arrow) {
+            arrow.classList.remove('rotate-180');
+        }
+    }
+}
+
+function openVoteModal() {
+    document.getElementById('voteModal').classList.remove('hidden');
+    document.getElementById('voteForm').reset();
+    // Reset options to 2
+    const optionsList = document.getElementById('vote-options-list');
+    optionsList.innerHTML = `
+        <div class="flex items-center space-x-2">
+            <input type="text" name="options[]" required class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Opcija 1">
+            <button type="button" onclick="removeVoteOption(this)" class="text-red-600 hover:text-red-700 p-2 hidden">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </div>
+        <div class="flex items-center space-x-2">
+            <input type="text" name="options[]" required class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Opcija 2">
+            <button type="button" onclick="removeVoteOption(this)" class="text-red-600 hover:text-red-700 p-2 hidden">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </div>
+    `;
+    updateRemoveButtons();
+}
+
+function closeVoteModal() {
+    document.getElementById('voteModal').classList.add('hidden');
+    document.getElementById('voteForm').reset();
+}
+
+function addVoteOption() {
+    const optionsList = document.getElementById('vote-options-list');
+    const optionCount = optionsList.children.length;
+    
+    if (optionCount >= 10) {
+        showNotification('Maksimalno 10 opcija je dozvoljeno', 'error');
+        return;
+    }
+    
+    const newOption = document.createElement('div');
+    newOption.className = 'flex items-center space-x-2';
+    newOption.innerHTML = `
+        <input type="text" name="options[]" required class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Opcija ${optionCount + 1}">
+        <button type="button" onclick="removeVoteOption(this)" class="text-red-600 hover:text-red-700 p-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </button>
+    `;
+    optionsList.appendChild(newOption);
+    updateRemoveButtons();
+}
+
+function removeVoteOption(button) {
+    const optionsList = document.getElementById('vote-options-list');
+    if (optionsList.children.length <= 2) {
+        showNotification('Minimum 2 opcije je potrebno', 'error');
+        return;
+    }
+    button.parentElement.remove();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const optionsList = document.getElementById('vote-options-list');
+    const removeButtons = optionsList.querySelectorAll('button[onclick*="removeVoteOption"]');
+    
+    removeButtons.forEach(button => {
+        if (optionsList.children.length > 2) {
+            button.classList.remove('hidden');
+        } else {
+            button.classList.add('hidden');
+        }
+    });
+}
+
+async function submitVote(voteId) {
+    const selectedOption = document.querySelector(`input[name="vote-option-${voteId}"]:checked`);
+    
+    if (!selectedOption) {
+        showNotification('Molimo izaberite opciju', 'error');
+        return;
+    }
+    
+    if (!confirm('Da li ste sigurni da želite da pošaljete glas?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`{{ route('votes.vote', [$building->id, 0]) }}`.replace('/0/vote', `/${voteId}/vote`), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ vote_option_id: selectedOption.value })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            const wasOpen = !document.getElementById(`vote-details-${voteId}`).classList.contains('hidden');
+            await loadVotes();
+            if (wasOpen) {
+                setTimeout(() => toggleVoteDetails(voteId), 100);
+            }
+        } else {
+            showNotification(data.message || 'Greška pri slanju glasa', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Desila se greška pri slanju glasa', 'error');
     }
 }
 

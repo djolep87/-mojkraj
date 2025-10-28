@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Vote extends Model
 {
@@ -36,9 +37,16 @@ class Vote extends Model
         return $this->hasMany(VoteOption::class);
     }
 
-    public function results(): HasMany
+    public function results(): HasManyThrough
     {
-        return $this->hasManyThrough(VoteResult::class, VoteOption::class);
+        return $this->hasManyThrough(
+            VoteResult::class,
+            VoteOption::class,
+            'vote_id',        // Foreign key on vote_options table
+            'vote_option_id', // Foreign key on vote_results table
+            'id',             // Local key on votes table
+            'id'              // Local key on vote_options table
+        );
     }
 
     // Scope za aktivna glasanja
