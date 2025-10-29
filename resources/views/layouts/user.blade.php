@@ -460,35 +460,109 @@
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-12 mt-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Moj Kraj</h3>
-                    <p class="text-gray-300 text-sm">
-                        Povezujemo komšiluk kroz deljenje vesti, dešavanja i lokalnih biznisa.
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+                <!-- About Section -->
+                <div class="lg:col-span-2">
+                    <h3 class="text-xl font-bold mb-4 flex items-center">
+                        <span class="bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">Moj Kraj</span>
+                    </h3>
+                    <p class="text-gray-300 text-sm leading-relaxed mb-4">
+                        Povezujemo komšiluk kroz deljenje vesti, dešavanja, lokalnih biznisa i efikasno upravljanje stambenim zajednicama.
                     </p>
                 </div>
                 <div>
-                    <h4 class="text-md font-semibold mb-4">Linkovi</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="{{ route('home') }}" class="text-gray-300 hover:text-white">Početna</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">Dešavanja</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white">O nama</a></li>
+                    <h4 class="text-md font-semibold mb-4 text-white">Sadržaj</h4>
+                    <ul class="space-y-2.5 text-sm">
+                        <li>
+                            <a href="{{ route('news.index') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-blue-400 transition-colors"></span>
+                                Vesti
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('businesses.index') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-green-400 transition-colors"></span>
+                                Biznisi
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('pets.index') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-orange-400 transition-colors"></span>
+                                Kućni ljubimci
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('offers.index') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-purple-400 transition-colors"></span>
+                                Ponude
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('buildings.index') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-indigo-400 transition-colors"></span>
+                                Stambene zajednice
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="text-md font-semibold mb-4">Sadržaj</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="{{ route('news.info') }}" class="text-gray-300 hover:text-white">Vesti</a></li>
-                        <li><a href="{{ route('business.info') }}" class="text-gray-300 hover:text-white">Biznisi</a></li>
-                        <li><a href="{{ route('offers.index') }}" class="text-gray-300 hover:text-white">Ponude</a></li>
+                    <h4 class="text-md font-semibold mb-4 text-white">Informacije</h4>
+                    <ul class="space-y-2.5 text-sm">
+                        <li>
+                            <a href="{{ route('news.info') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-blue-400 transition-colors"></span>
+                                O vestima
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('business.info') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-green-400 transition-colors"></span>
+                                O biznisima
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('pets.info') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-orange-400 transition-colors"></span>
+                                O ljubimcima
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('offers.info') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-purple-400 transition-colors"></span>
+                                O ponudama
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('buildings.info') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-indigo-400 transition-colors"></span>
+                                O stambenim zajednicama
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="text-md font-semibold mb-4">Kontakt</h4>
-                    <p class="text-gray-300 text-sm">
-                        Email: info@mojkraj.rs<br>
-                        Telefon: +381 11 123 4567
-                    </p>
+                    <h4 class="text-md font-semibold mb-4 text-white">Ostalo</h4>
+                    <ul class="space-y-2.5 text-sm mb-4">
+                        <li>
+                            <a href="{{ route('home') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-blue-400 transition-colors"></span>
+                                Početna
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('about') }}" class="text-gray-300 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 group-hover:bg-purple-400 transition-colors"></span>
+                                O nama
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="mt-4 pt-4 border-t border-gray-700">
+                        <p class="text-gray-300 text-xs mb-2">Kontakt:</p>
+                        <p class="text-gray-400 text-xs">
+                            Email: <a href="mailto:info@mojkraj.rs" class="hover:text-white transition-colors">info@mojkraj.rs</a><br>
+                            Telefon: +381 11 123 4567
+                        </p>
+                    </div>
                 </div>
             </div>
             <div class="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-300">
