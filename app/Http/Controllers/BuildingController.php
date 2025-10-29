@@ -96,6 +96,7 @@ class BuildingController extends Controller
                 'neighborhood' => 'nullable|string|max:255',
                 'lat' => 'nullable|numeric|between:-90,90',
                 'lng' => 'nullable|numeric|between:-180,180',
+                'apartment_number' => 'nullable|string|max:50',
             ]);
 
             if ($validator->fails()) {
@@ -168,7 +169,8 @@ class BuildingController extends Controller
 
             // Dodaje korisnika kao managera nove zgrade
             $building->users()->attach(Auth::id(), [
-                'role_in_building' => 'manager'
+                'role_in_building' => 'manager',
+                'apartment_number' => $request->input('apartment_number', null)
             ]);
 
             $building->load(['users', 'apartments']);
@@ -514,6 +516,19 @@ class BuildingController extends Controller
             ], 403);
         }
 
+        // Validacija - broj stana je obavezan
+        $validator = Validator::make($request->all(), [
+            'apartment_number' => 'required|string|max:50'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validacija neuspešna',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         // Proveri da li već postoji pending zahtev
         $existingRequest = \App\Models\BuildingJoinRequest::where('building_id', $building->id)
             ->where('user_id', $user->id)
@@ -532,7 +547,8 @@ class BuildingController extends Controller
             'building_id' => $building->id,
             'user_id' => $user->id,
             'status' => 'pending',
-            'message' => $request->input('message', null)
+            'message' => $request->input('message', null),
+            'apartment_number' => $request->input('apartment_number')
         ]);
 
         return response()->json([
@@ -591,7 +607,8 @@ class BuildingController extends Controller
         }
 
         $building->users()->attach($userToAdd->id, [
-            'role_in_building' => 'resident'
+            'role_in_building' => 'resident',
+            'apartment_number' => $request->input('apartment_number', null)
         ]);
 
         return response()->json([
@@ -615,6 +632,7 @@ class BuildingController extends Controller
         }
 
         $requests = $building->joinRequests()
+            ->where('status', '!=', 'approved')
             ->with('user:id,name,email,address,neighborhood,city')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -667,7 +685,8 @@ class BuildingController extends Controller
 
         // Dodaj korisnika u zgradu
         $building->users()->attach($joinRequest->user_id, [
-            'role_in_building' => 'resident'
+            'role_in_building' => 'resident',
+            'apartment_number' => $joinRequest->apartment_number
         ]);
 
         // Ažuriraj status zahteva

@@ -15,6 +15,7 @@ class BuildingJoinRequest extends Model
         'user_id',
         'status',
         'message',
+        'apartment_number',
     ];
 
     protected $casts = [

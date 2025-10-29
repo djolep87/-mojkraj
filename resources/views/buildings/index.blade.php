@@ -170,7 +170,7 @@
                                     $building->neighborhood === auth()->user()->neighborhood)
                                 <!-- User can join (same address) -->
                                 <div class="flex flex-col space-y-2">
-                                    <button onclick="selfJoinFromList({{ $building->id }})" class="w-full bg-green-600 text-white text-center py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 flex items-center justify-center">
+                                    <button onclick="openSelfJoinModalFromList({{ $building->id }})" class="w-full bg-green-600 text-white text-center py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 flex items-center justify-center">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                         </svg>
@@ -278,6 +278,12 @@
                         <input type="text" id="neighborhood" name="neighborhood" value="{{ auth()->user()->neighborhood }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
                     
+                    <div>
+                        <label for="apartment_number" class="block text-sm font-medium text-gray-700 mb-1">Broj stana (opciono)</label>
+                        <input type="text" id="apartment_number" name="apartment_number" placeholder="npr. 5, 12A, ..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <p class="mt-1 text-xs text-gray-500">Ostavite prazno ako ne želite da unesete broj stana</p>
+                    </div>
+                    
                     <div class="flex space-x-3 pt-4">
                         <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200">
                             Sačuvaj
@@ -288,6 +294,43 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Self Join Modal From List -->
+<div id="selfJoinModalFromList" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Pridruži se zgradi</h3>
+                <button onclick="closeSelfJoinModalFromList()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <p class="text-sm text-gray-600">Pošaljite zahtev za pridruživanje ovoj zgradi. Manager će pregledati vaš zahtev.</p>
+                
+                <div>
+                    <label for="selfJoinApartmentNumberFromList" class="block text-sm font-medium text-gray-700 mb-1">
+                        Broj stana <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="selfJoinApartmentNumberFromList" name="apartment_number" placeholder="npr. 5, 12A, ..." required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <p class="mt-1 text-xs text-gray-500">Broj stana je obavezan</p>
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button onclick="selfJoinFromList(document.getElementById('selfJoinModalFromList').dataset.buildingId)" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200">
+                        Pošalji zahtev
+                    </button>
+                    <button onclick="closeSelfJoinModalFromList()" class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                        Otkaži
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -340,57 +383,91 @@ function showNotification(message, type) {
     }, 4000);
 }
 
+function openSelfJoinModalFromList(buildingId) {
+    // Store building ID in modal
+    const modal = document.getElementById('selfJoinModalFromList');
+    modal.dataset.buildingId = buildingId;
+    modal.classList.remove('hidden');
+    // Reset form
+    document.getElementById('selfJoinApartmentNumberFromList').value = '';
+}
+
+function closeSelfJoinModalFromList() {
+    document.getElementById('selfJoinModalFromList').classList.add('hidden');
+}
+
 async function selfJoinFromList(buildingId) {
-    if (!confirm('Da li ste sigurni da želite da se pridružite ovoj zgradi?')) {
+    const apartmentInput = document.getElementById('selfJoinApartmentNumberFromList');
+    const apartmentNumber = apartmentInput?.value?.trim() || '';
+    
+    // Validacija - broj stana je obavezan
+    if (!apartmentNumber) {
+        showNotification('Morate uneti broj stana.', 'error');
+        if (apartmentInput) {
+            apartmentInput.focus();
+            apartmentInput.classList.add('border-red-500');
+            setTimeout(() => {
+                apartmentInput.classList.remove('border-red-500');
+            }, 3000);
+        }
         return;
     }
     
-    // Find and disable button during request
-    const buttons = document.querySelectorAll(`button[onclick*="selfJoinFromList(${buildingId})"]`);
-    buttons.forEach(button => {
-        button.disabled = true;
-        const originalHTML = button.innerHTML;
-        button.dataset.originalHTML = originalHTML;
-        button.innerHTML = '<div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>Pridruživanje...';
-    });
+    // Disable button during request
+    const submitButton = document.querySelector('#selfJoinModalFromList button[onclick*="selfJoinFromList"]');
+    const originalText = submitButton?.textContent || '';
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Slanje zahteva...';
+    }
     
     try {
         const response = await fetch(`/stambene-zajednice/${buildingId}/self-join`, {
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            }
+            },
+            body: JSON.stringify({
+                apartment_number: apartmentNumber
+            })
         });
         
         const data = await response.json();
         
         if (data.success) {
             showNotification(data.message, 'success');
+            closeSelfJoinModalFromList();
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
         } else {
-            showNotification(data.message || 'Greška pri pridruživanju zgradi', 'error');
-            // Restore buttons
-            buttons.forEach(button => {
-                button.disabled = false;
-                if (button.dataset.originalHTML) {
-                    button.innerHTML = button.dataset.originalHTML;
-                }
-            });
+            let errorMessage = data.message || 'Greška pri pridruživanju zgradi';
+            
+            // Ako postoje greške validacije, prikaži ih
+            if (data.errors && data.errors.apartment_number) {
+                errorMessage = data.errors.apartment_number[0] || errorMessage;
+                apartmentInput.classList.add('border-red-500');
+                setTimeout(() => {
+                    apartmentInput.classList.remove('border-red-500');
+                }, 3000);
+            }
+            
+            showNotification(errorMessage, 'error');
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
         }
     } catch (error) {
         console.error('Error:', error);
         showNotification('Desila se greška pri pridruživanju zgradi', 'error');
-        // Restore buttons
-        buttons.forEach(button => {
-            button.disabled = false;
-            if (button.dataset.originalHTML) {
-                button.innerHTML = button.dataset.originalHTML;
-            }
-        });
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+        }
     }
 }
 
@@ -408,6 +485,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 document.getElementById('searchForm').submit();
+            }
+        });
+    }
+    
+    // Close self join modal when clicking outside
+    const selfJoinModalFromList = document.getElementById('selfJoinModalFromList');
+    if (selfJoinModalFromList) {
+        selfJoinModalFromList.addEventListener('click', function(e) {
+            if (e.target === selfJoinModalFromList) {
+                closeSelfJoinModalFromList();
             }
         });
     }

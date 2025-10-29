@@ -37,7 +37,7 @@ class Building extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'building_user')
-            ->withPivot('role_in_building')
+            ->withPivot('role_in_building', 'apartment_number')
             ->withTimestamps();
     }
 
@@ -45,7 +45,7 @@ class Building extends Model
     {
         return $this->belongsToMany(User::class, 'building_user')
             ->wherePivot('role_in_building', 'manager')
-            ->withPivot('role_in_building')
+            ->withPivot('role_in_building', 'apartment_number')
             ->withTimestamps();
     }
 
@@ -63,7 +63,7 @@ class Building extends Model
     {
         return $this->belongsToMany(User::class, 'building_user')
             ->wherePivot('role_in_building', 'resident')
-            ->withPivot('role_in_building')
+            ->withPivot('role_in_building', 'apartment_number')
             ->withTimestamps();
     }
 

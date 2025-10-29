@@ -181,6 +181,9 @@
                                                 <div class="ml-4">
                                                     <p class="font-medium text-gray-900">{{ $member->name }}</p>
                                                     <p class="text-sm text-gray-500">{{ $member->email }}</p>
+                                                    @if($member->pivot->apartment_number)
+                                                        <p class="text-xs text-gray-400 mt-0.5">Stan: {{ $member->pivot->apartment_number }}</p>
+                                                    @endif
                                                 </div>
                                             </div>
                                             <div>
@@ -585,6 +588,47 @@
     </div>
 </div>
 
+<!-- Self Join Modal -->
+<div id="selfJoinModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Pridruži se zgradi</h3>
+                <button onclick="closeSelfJoinModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <p class="text-sm text-gray-600">Pošaljite zahtev za pridruživanje ovoj zgradi. Manager će pregledati vaš zahtev.</p>
+                
+                <div>
+                    <label for="selfJoinApartmentNumber" class="block text-sm font-medium text-gray-700 mb-1">
+                        Broj stana <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="selfJoinApartmentNumber" name="apartment_number" placeholder="npr. 5, 12A, ..." required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <p class="mt-1 text-xs text-gray-500">Broj stana je obavezan</p>
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button onclick="selfJoinBuilding()" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200">
+                        Pošalji zahtev
+                    </button>
+                    <button onclick="closeSelfJoinModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                        Otkaži
+                    </button>
+                </div>
+                
+                <div id="joinRequestStatusModal" class="hidden mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p class="text-sm text-yellow-800" id="joinRequestStatusTextModal"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function showNotification(message, type) {
     const notification = document.createElement('div');
@@ -636,22 +680,30 @@ async function openAddResidentModal() {
         
         if (data.success && data.data.length > 0) {
             listContainer.innerHTML = `
-                <div class="space-y-2">
+                <div class="space-y-3">
                     <p class="text-sm text-gray-600 mb-4">Korisnici koji žive na adresi <strong>{{ $building->address }}</strong> i mogu biti dodati:</p>
                     ${data.data.map(user => `
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                                    <span class="text-indigo-600 font-semibold">${user.name.charAt(0)}</span>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="font-medium text-gray-900">${user.name}</p>
-                                    <p class="text-sm text-gray-500">${user.email}</p>
+                        <div class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 border border-gray-200">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center flex-1">
+                                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                        <span class="text-indigo-600 font-semibold">${user.name.charAt(0)}</span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="font-medium text-gray-900">${user.name}</p>
+                                        <p class="text-sm text-gray-500">${user.email}</p>
+                                    </div>
                                 </div>
                             </div>
-                            <button onclick="addResident(${user.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200">
-                                Dodaj
-                            </button>
+                            <div class="mt-3 pt-3 border-t border-gray-300">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Broj stana (opciono)</label>
+                                <div class="flex space-x-2">
+                                    <input type="text" id="apartment_number_${user.id}" placeholder="npr. 5, 12A, ..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                                    <button onclick="addResident(${user.id})" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 text-sm whitespace-nowrap">
+                                        Dodaj
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
@@ -682,6 +734,8 @@ function closeAddResidentModal() {
 }
 
 async function addResident(userId) {
+    const apartmentNumber = document.getElementById(`apartment_number_${userId}`)?.value || null;
+    
     try {
         const response = await fetch('{{ route("buildings.addResident", $building->id) }}', {
             method: 'POST',
@@ -691,7 +745,10 @@ async function addResident(userId) {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
             },
-            body: JSON.stringify({ user_id: userId })
+            body: JSON.stringify({ 
+                user_id: userId,
+                apartment_number: apartmentNumber 
+            })
         });
         
         const data = await response.json();
@@ -1893,8 +1950,7 @@ async function checkJoinRequestStatus() {
                     button.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
             } else {
-                // Nema zahteva, omogući slanje
-                document.getElementById('selfJoinButton').onclick = selfJoinBuilding;
+                // Nema zahteva, omogući slanje - modal će otvoriti openSelfJoinModal
             }
         }
     } catch (error) {
@@ -1902,7 +1958,36 @@ async function checkJoinRequestStatus() {
     }
 }
 
+function openSelfJoinModal() {
+    const modal = document.getElementById('selfJoinModal');
+    modal.classList.remove('hidden');
+    // Reset form
+    document.getElementById('selfJoinApartmentNumber').value = '';
+    // Proveri status zahteva
+    checkJoinRequestStatus();
+}
+
+function closeSelfJoinModal() {
+    document.getElementById('selfJoinModal').classList.add('hidden');
+}
+
 async function selfJoinBuilding() {
+    const apartmentInput = document.getElementById('selfJoinApartmentNumber');
+    const apartmentNumber = apartmentInput?.value?.trim() || '';
+    
+    // Validacija - broj stana je obavezan
+    if (!apartmentNumber) {
+        showNotification('Morate uneti broj stana.', 'error');
+        if (apartmentInput) {
+            apartmentInput.focus();
+            apartmentInput.classList.add('border-red-500');
+            setTimeout(() => {
+                apartmentInput.classList.remove('border-red-500');
+            }, 3000);
+        }
+        return;
+    }
+    
     const button = document.getElementById('selfJoinButton');
     const originalText = document.getElementById('selfJoinText').textContent;
     
@@ -1917,17 +2002,32 @@ async function selfJoinBuilding() {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            }
+            },
+            body: JSON.stringify({
+                apartment_number: apartmentNumber
+            })
         });
         
         const data = await response.json();
         
         if (data.success) {
             showNotification(data.message, 'success');
+            closeSelfJoinModal();
             // Ažuriraj UI da prikaže status zahteva
             checkJoinRequestStatus();
         } else {
-            showNotification(data.message || 'Greška pri slanju zahteva', 'error');
+            let errorMessage = data.message || 'Greška pri slanju zahteva';
+            
+            // Ako postoje greške validacije, prikaži ih
+            if (data.errors && data.errors.apartment_number) {
+                errorMessage = data.errors.apartment_number[0] || errorMessage;
+                apartmentInput.classList.add('border-red-500');
+                setTimeout(() => {
+                    apartmentInput.classList.remove('border-red-500');
+                }, 3000);
+            }
+            
+            showNotification(errorMessage, 'error');
             button.disabled = false;
             document.getElementById('selfJoinText').textContent = originalText;
         }
@@ -2055,6 +2155,7 @@ function renderJoinRequests(requests) {
                         </div>
                         <p class="text-sm text-gray-600 mb-1">${escapeHtml(request.user.email)}</p>
                         <p class="text-sm text-gray-500">${escapeHtml(request.user.address || '')}, ${escapeHtml(request.user.neighborhood || '')}, ${escapeHtml(request.user.city || '')}</p>
+                        ${request.apartment_number ? `<p class="text-sm text-gray-600 mt-1"><strong>Broj stana:</strong> ${escapeHtml(request.apartment_number)}</p>` : ''}
                         ${request.message ? `<p class="text-sm text-gray-700 mt-2 italic">"${escapeHtml(request.message)}"</p>` : ''}
                         <p class="text-xs text-gray-400 mt-2">Poslato: ${date}</p>
                     </div>
