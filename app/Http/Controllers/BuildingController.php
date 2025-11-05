@@ -36,16 +36,28 @@ class BuildingController extends Controller
             ->paginate(15)
             ->withQueryString(); // Čuva search parametar u pagination linkovima
 
+        // Dohvati sve zgrade korisnika gde je član
+        $userBuildings = $user->buildings()
+            ->where('city', $user->city)
+            ->where('neighborhood', $user->neighborhood)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Prva zgrada za backward compatibility (ako se koristi negde)
+        $userBuilding = $userBuildings->first();
+
         // Ako je AJAX zahtev ili API zahtev, vrati JSON
         if ($request->ajax() || $request->is('api/*')) {
             return response()->json([
                 'success' => true,
-                'data' => $buildings
+                'data' => $buildings,
+                'user_building' => $userBuilding,
+                'user_buildings' => $userBuildings
             ]);
         }
 
         // Inače vrati view
-        return view('buildings.index', compact('buildings'));
+        return view('buildings.index', compact('buildings', 'userBuilding', 'userBuildings'));
     }
 
     /**
