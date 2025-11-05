@@ -118,7 +118,7 @@
                         Glasanja
                     </button>
                     <button onclick="showTab('announcements')" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700" data-tab="announcements">
-                        Objave
+                        Oglasna tabla
                     </button>
                 </nav>
             </div>
@@ -546,7 +546,7 @@
                                     <p class="pl-1">ili prevucite ovde</p>
                                 </div>
                                 <p class="text-xs text-gray-500">PNG, JPG, GIF do 2MB</p>
-                                <img id="photo-preview" class="mt-2 max-w-full max-h-48 mx-auto rounded-lg hidden" alt="Preview">
+                                <img id="photo-preview" class="mt-2 w-full h-64 object-contain mx-auto rounded-lg border border-gray-200 hidden bg-gray-50" alt="Preview">
                             </div>
                         </div>
                     </div>
@@ -936,8 +936,8 @@ async function loadReports() {
                                         </svg>
                                         Pridružena slika:
                                     </h5>
-                                    <div class="relative">
-                                        <img src="/storage/${report.photo}" alt="Prijava slika" class="max-w-full h-auto rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity shadow-sm" onclick="event.stopPropagation(); showImageModal('/storage/${report.photo}')">
+                                    <div class="relative w-full">
+                                        <img src="/storage/${report.photo}" alt="Prijava slika" class="w-full h-64 object-contain rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity shadow-sm bg-gray-50" onclick="event.stopPropagation(); showImageModal('/storage/${report.photo}')">
                                         <div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
                                             Klik za uvećanje
                                         </div>

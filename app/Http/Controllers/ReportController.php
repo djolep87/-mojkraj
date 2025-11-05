@@ -70,7 +70,7 @@ class ReportController extends Controller
 
         // Upload slike ako je priložena
         if ($request->hasFile('photo')) {
-            $data['photo'] = $request->file('photo')->store('reports', 'public');
+            $data['photo'] = $this->resizeAndStoreImage($request->file('photo'), 'reports');
         }
 
         $report = Report::create($data);
@@ -156,7 +156,7 @@ class ReportController extends Controller
             if ($report->photo) {
                 Storage::disk('public')->delete($report->photo);
             }
-            $data['photo'] = $request->file('photo')->store('reports', 'public');
+            $data['photo'] = $this->resizeAndStoreImage($request->file('photo'), 'reports');
         }
 
         $report->update($data);
@@ -231,5 +231,130 @@ class ReportController extends Controller
             'message' => 'Prijava je označena kao zatvorena',
             'data' => $report
         ]);
+    }
+
+    /**
+     * Resize i store sliku sa standardnim dimenzijama
+     * Landscape: 800x600px, Portrait: 600x800px
+     */
+    private function resizeAndStoreImage($file, $directory): string
+    {
+        // Standardne dimenzije
+        $landscapeWidth = 800;
+        $landscapeHeight = 600;
+        $portraitWidth = 600;
+        $portraitHeight = 800;
+
+        // Proveri da li GD extension postoji
+        if (!extension_loaded('gd')) {
+            // Ako GD nije dostupan, samo store original
+            return $file->store($directory, 'public');
+        }
+
+        // Učitaj sliku
+        $imageInfo = getimagesize($file->getRealPath());
+        if (!$imageInfo) {
+            return $file->store($directory, 'public');
+        }
+
+        $originalWidth = $imageInfo[0];
+        $originalHeight = $imageInfo[1];
+        $mimeType = $imageInfo['mime'];
+
+        // Odredi da li je landscape ili portrait
+        $isLandscape = $originalWidth > $originalHeight;
+        
+        // Postavi target dimenzije
+        if ($isLandscape) {
+            $targetWidth = $landscapeWidth;
+            $targetHeight = $landscapeHeight;
+        } else {
+            $targetWidth = $portraitWidth;
+            $targetHeight = $portraitHeight;
+        }
+
+        // Izračunaj dimenzije uz zadržavanje aspect ratio
+        $ratio = min($targetWidth / $originalWidth, $targetHeight / $originalHeight);
+        $newWidth = (int)($originalWidth * $ratio);
+        $newHeight = (int)($originalHeight * $ratio);
+
+        // Učitaj original sliku
+        switch ($mimeType) {
+            case 'image/jpeg':
+                $source = imagecreatefromjpeg($file->getRealPath());
+                break;
+            case 'image/png':
+                $source = imagecreatefrompng($file->getRealPath());
+                break;
+            case 'image/gif':
+                $source = imagecreatefromgif($file->getRealPath());
+                break;
+            default:
+                return $file->store($directory, 'public');
+        }
+
+        if (!$source) {
+            return $file->store($directory, 'public');
+        }
+
+        // Kreiraj canvas sa target dimenzijama
+        $canvas = imagecreatetruecolor($targetWidth, $targetHeight);
+        
+        // Za PNG sačuvaj transparentnost, za ostale bela pozadina
+        if ($mimeType === 'image/png') {
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            $transparent = imagecolorallocatealpha($canvas, 255, 255, 255, 127);
+            imagefill($canvas, 0, 0, $transparent);
+            imagealphablending($canvas, true);
+        } else {
+            $white = imagecolorallocate($canvas, 255, 255, 255);
+            imagefill($canvas, 0, 0, $white);
+        }
+
+        // Centriraj sliku na canvasu
+        $x = (int)(($targetWidth - $newWidth) / 2);
+        $y = (int)(($targetHeight - $newHeight) / 2);
+
+        // Resize i kopiraj na canvas
+        imagecopyresampled(
+            $canvas,
+            $source,
+            $x,
+            $y,
+            0,
+            0,
+            $newWidth,
+            $newHeight,
+            $originalWidth,
+            $originalHeight
+        );
+
+        // Generiši unique filename
+        $filename = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $path = $directory . '/' . $filename;
+        $fullPath = storage_path('app/public/' . $path);
+
+        // Kreiraj directory ako ne postoji
+        Storage::disk('public')->makeDirectory($directory);
+
+        // Sačuvaj resized sliku
+        switch ($mimeType) {
+            case 'image/jpeg':
+                imagejpeg($canvas, $fullPath, 85); // 85% quality
+                break;
+            case 'image/png':
+                imagepng($canvas, $fullPath, 6); // Compression level 6
+                break;
+            case 'image/gif':
+                imagegif($canvas, $fullPath);
+                break;
+        }
+
+        // Oslobodi memoriju
+        imagedestroy($source);
+        imagedestroy($canvas);
+
+        return $path;
     }
 }
