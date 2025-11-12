@@ -240,26 +240,39 @@
 
                         <!-- Owner Reply -->
                         @if($rating->reply)
-                            <div class="mt-4 ml-0 sm:ml-6 pl-0 sm:pl-4 border-l-0 sm:border-l-4 border-green-500 bg-gray-50 rounded-lg sm:rounded-r-lg p-4">
+                            <div class="mt-4 ml-0 sm:ml-6 pl-0 sm:pl-4 border-l-0 sm:border-l-4 border-green-500 bg-gray-50 rounded-lg sm:rounded-r-lg p-4" id="reply-{{ $rating->id }}">
                                 <div class="flex items-center space-x-2 mb-2">
                                     <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-emerald-700 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white text-xs font-semibold">{{ substr($rating->reply->businessUser->company_name, 0, 1) }}</span>
+                                        <span class="text-white text-xs font-semibold">{{ substr($rating->reply->businessUser->company_name ?? $businessUser->company_name, 0, 1) }}</span>
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <div class="font-semibold text-gray-900 text-sm truncate">{{ $rating->reply->businessUser->company_name }}</div>
+                                        <div class="font-semibold text-gray-900 text-sm truncate">{{ $rating->reply->businessUser->company_name ?? $businessUser->company_name }}</div>
                                         <div class="text-xs text-gray-500">Vlasnik biznisa</div>
                                     </div>
                                 </div>
-                                <p class="text-gray-700 text-sm break-words">{{ $rating->reply->reply }}</p>
+                                <p class="text-gray-700 text-sm break-words whitespace-pre-wrap">{{ $rating->reply->reply }}</p>
                                 <span class="text-xs text-gray-500 mt-2 block">{{ $rating->reply->created_at->format('d.m.Y H:i') }}</span>
                             </div>
                         @elseif(auth('business')->check() && auth('business')->id() == $businessUser->id)
                             <!-- Owner Reply Form -->
-                            <div class="mt-4 ml-0 sm:ml-6 pl-0 sm:pl-4 border-l-0 sm:border-l-4 border-gray-300 bg-gray-50 rounded-lg sm:rounded-r-lg p-4">
-                                <form class="owner-reply-form" data-rating-id="{{ $rating->id }}">
+                            <div class="mt-4 ml-0 sm:ml-6 pl-0 sm:pl-4 border-l-0 sm:border-l-4 border-gray-300 bg-gray-50 rounded-lg sm:rounded-r-lg p-4" id="reply-form-container-{{ $rating->id }}">
+                                @if(session('success'))
+                                    <div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
+                                        {{ session('success') }}
+                                    </div>
+                                @endif
+                                @if(session('error'))
+                                    <div class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                                        {{ session('error') }}
+                                    </div>
+                                @endif
+                                <form method="POST" action="{{ route('businesses.ratings.reply', $rating->id) }}" id="reply-form-{{ $rating->id }}">
                                     @csrf
-                                    <textarea name="reply" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none text-sm" placeholder="Odgovorite na ovu recenziju..." required></textarea>
-                                    <button type="submit" class="mt-2 w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors duration-200 focus:outline-none active:scale-95">
+                                    <textarea name="reply" id="reply-{{ $rating->id }}" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none text-sm" placeholder="Odgovorite na ovu recenziju..." required>{{ old('reply') }}</textarea>
+                                    @error('reply')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                    <button type="submit" id="submit-btn-{{ $rating->id }}" class="mt-2 w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors duration-200 focus:outline-none active:scale-95">
                                         Pošalji odgovor
                                     </button>
                                 </form>
@@ -447,47 +460,128 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Owner Reply Form
-    const ownerReplyForms = document.querySelectorAll('.owner-reply-form');
-    ownerReplyForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const ratingId = this.dataset.ratingId;
-            const formData = new FormData(this);
-            const reply = formData.get('reply');
-
-            if (!reply.trim()) {
-                alert('Molimo unesite odgovor.');
-                return;
+    // Owner Reply Form - Simple approach using event delegation
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        
+        // Check if this is an owner reply form
+        if (!form || typeof form.action !== 'string' || !form.action.includes('/odgovor')) {
+            return; // Not our form
+        }
+        
+        // Check if form has the owner-reply-form class
+        const hasOwnerReplyClass = Array.from(form.classList).some(className => className.startsWith('owner-reply-form-'));
+        if (!hasOwnerReplyClass) {
+            return; // Not our form
+        }
+        
+        console.log('=== FORM SUBMIT DETECTED ===');
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        const formData = new FormData(form);
+        const reply = formData.get('reply');
+        const ratingIdMatch = form.action.match(/\/recenzije\/(\d+)\/odgovor/);
+        const ratingId = ratingIdMatch ? ratingIdMatch[1] : null;
+        const button = form.querySelector('button[type="submit"]');
+        
+        console.log('Form action:', form.action);
+        console.log('Rating ID:', ratingId);
+        console.log('Reply:', reply);
+        
+        if (!reply || !reply.trim()) {
+            alert('Molimo unesite odgovor.');
+            return false;
+        }
+        
+        if (!ratingId) {
+            console.error('Rating ID not found in URL:', form.action);
+            alert('Greška: ID recenzije nije pronađen.');
+            return false;
+        }
+        
+        // Disable button
+        const originalButtonText = button ? button.textContent : 'Pošalji odgovor';
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Šalje se...';
+        }
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                         form.querySelector('input[name="_token"]')?.value || '';
+        
+        console.log('CSRF Token:', csrfToken ? 'Found' : 'Not found');
+        
+        if (!csrfToken) {
+            alert('CSRF token nije pronađen.');
+            if (button) {
+                button.disabled = false;
+                button.textContent = originalButtonText;
             }
-
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            return false;
+        }
+        
+        const url = `/biznisi/recenzije/${ratingId}/odgovor`;
+        console.log('=== SENDING REQUEST ===');
+        console.log('URL:', url);
+        
+        const submitData = new FormData();
+        submitData.append('reply', reply.trim());
+        submitData.append('_token', csrfToken);
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: submitData,
+            credentials: 'same-origin',
+        })
+        .then(response => {
+            console.log('=== FETCH RESPONSE RECEIVED ===');
+            console.log('Response status:', response.status);
+            console.log('Response statusText:', response.statusText);
             
-            fetch(`/biznisi/recenzije/${ratingId}/odgovor`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ reply: reply }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert(data.message || 'Greška pri slanju odgovora.');
+            return response.text().then(text => {
+                console.log('Response text:', text.substring(0, 500));
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Failed to parse JSON:', e);
+                    throw new Error('Invalid JSON response: ' + text.substring(0, 100));
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Greška pri slanju odgovora.');
             });
+        })
+        .then(data => {
+            console.log('=== SUCCESS RESPONSE ===');
+            console.log('Response data:', data);
+            if (data.success) {
+                alert(data.message || 'Odgovor je uspešno dodat.');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Greška pri slanju odgovora.');
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalButtonText;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('=== ERROR ===');
+            console.error('Error:', error);
+            console.error('Error message:', error.message);
+            alert(error.message || 'Greška pri slanju odgovora.');
+            if (button) {
+                button.disabled = false;
+                button.textContent = originalButtonText;
+            }
         });
-    });
+        
+        return false;
+    }, true); // Use capture phase
 });
 </script>
 @endpush
