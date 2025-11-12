@@ -100,4 +100,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(BuildingJoinRequest::class);
     }
+
+    // Business ratings relacije
+    public function businessRatings()
+    {
+        return $this->hasMany(BusinessRating::class);
+    }
+
+    public function businessRatingHelpfulVotes()
+    {
+        return $this->hasMany(BusinessRatingHelpfulVote::class);
+    }
 }

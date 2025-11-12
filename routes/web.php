@@ -15,6 +15,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\VoteController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AnnouncementCommentController;
+use App\Http\Controllers\BusinessRatingController;
 
 // Home route
 Route::get('/', function () {
@@ -146,6 +147,12 @@ Route::middleware('check.user.auth')->group(function () {
     Route::get('/biznisi', [BusinessController::class, 'index'])->name('businesses.index');
     Route::get('/biznisi/{businessUser}', [BusinessController::class, 'show'])->name('businesses.show');
     Route::get('/biznisi-lista', [BusinessController::class, 'listBusinesses'])->name('businesses.list');
+    
+    // Business ratings routes
+    Route::get('/biznisi/{businessUser}/recenzije', [BusinessRatingController::class, 'index'])->name('businesses.ratings.index');
+    Route::post('/biznisi/{businessUser}/recenzije', [BusinessRatingController::class, 'store'])->name('businesses.ratings.store');
+    Route::post('/biznisi/recenzije/{businessRating}/korisno', [BusinessRatingController::class, 'helpful'])->name('businesses.ratings.helpful');
+    Route::post('/biznisi/recenzije/{businessRating}/odgovor', [BusinessRatingController::class, 'ownerReply'])->name('businesses.ratings.reply');
 });
 
 // News routes (all protected)

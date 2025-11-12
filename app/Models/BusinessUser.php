@@ -55,4 +55,15 @@ class BusinessUser extends Authenticatable
     {
         return $this->hasMany(Offer::class);
     }
+
+    // Business ratings relacije
+    public function ratings()
+    {
+        return $this->hasMany(BusinessRating::class);
+    }
+
+    public function ratingReplies()
+    {
+        return $this->hasMany(BusinessRatingReply::class);
+    }
 }

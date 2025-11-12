@@ -81,6 +81,35 @@ class BusinessController extends Controller
         
         $businesses = $query->paginate(24)->withQueryString();
         
+        // Get all business IDs
+        $businessIds = $businesses->pluck('id')->toArray();
+        
+        // Load ratings data efficiently using aggregation
+        if (!empty($businessIds)) {
+            $ratingsData = \App\Models\BusinessRating::whereIn('business_user_id', $businessIds)
+                ->selectRaw('business_user_id, AVG(rating) as average_rating, COUNT(*) as total_ratings')
+                ->groupBy('business_user_id')
+                ->get()
+                ->keyBy('business_user_id');
+            
+            // Assign ratings to each business
+            foreach ($businesses as $business) {
+                if (isset($ratingsData[$business->id])) {
+                    $business->average_rating = (float) $ratingsData[$business->id]->average_rating;
+                    $business->total_ratings = (int) $ratingsData[$business->id]->total_ratings;
+                } else {
+                    $business->average_rating = 0.0;
+                    $business->total_ratings = 0;
+                }
+            }
+        } else {
+            // No businesses, set default values
+            foreach ($businesses as $business) {
+                $business->average_rating = 0.0;
+                $business->total_ratings = 0;
+            }
+        }
+        
         // Get filter options
         $types = BusinessUser::distinct()->pluck('business_type')->filter();
         
@@ -124,7 +153,33 @@ class BusinessController extends Controller
             $businessUser->increment('views');
         }
         
-        return view('businesses.show', compact('businessUser'));
+        // Get ratings data
+        $averageRating = \App\Models\BusinessRating::getAverageRating($businessUser->id);
+        $totalRatings = \App\Models\BusinessRating::getTotalRatings($businessUser->id);
+        
+        // Get user's rating if logged in as regular user
+        $userRating = null;
+        if ($user) {
+            $userRating = \App\Models\BusinessRating::where('user_id', $user->id)
+                ->where('business_user_id', $businessUser->id)
+                ->first();
+        }
+        
+        // Get latest ratings
+        $ratings = \App\Models\BusinessRating::where('business_user_id', $businessUser->id)
+            ->with(['user', 'reply.businessUser'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Check if current user has voted for helpful on each rating
+        if ($user) {
+            foreach ($ratings as $rating) {
+                $rating->user_has_voted = $rating->userHasVoted($user->id);
+            }
+        }
+        
+        return view('businesses.show', compact('businessUser', 'averageRating', 'totalRatings', 'userRating', 'ratings'));
     }
 
     public function dashboard()
