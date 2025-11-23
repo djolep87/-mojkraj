@@ -109,96 +109,94 @@
 
         <!-- Businesses Grid -->
         @if($businesses->count() > 0)
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
                 @foreach($businesses as $businessUser)
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-                        <!-- Business Image -->
-                        <div class="h-48 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                            <div class="text-center">
-                                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <span class="text-2xl font-bold text-white">{{ substr($businessUser->company_name, 0, 1) }}</span>
+                        <!-- Mobile Layout: Horizontal with image on left -->
+                        <div class="flex md:flex-col">
+                            <!-- Business Image - Left side on mobile, top on desktop -->
+                            <div class="w-24 h-24 md:w-full md:h-48 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 md:flex-shrink">
+                                <div class="text-center">
+                                    <div class="w-10 h-10 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-1 md:mb-2">
+                                        <span class="text-lg md:text-2xl font-bold text-white">{{ substr($businessUser->company_name, 0, 1) }}</span>
+                                    </div>
+                                    <p class="text-white text-xs md:text-sm font-medium hidden md:block">{{ $businessUser->company_name }}</p>
                                 </div>
-                                <p class="text-white text-sm font-medium">{{ $businessUser->company_name }}</p>
                             </div>
-                        </div>
 
-                        <!-- Business Content -->
-                        <div class="p-6">
-                            <!-- Header -->
-                            <div class="flex items-start justify-between mb-3">
-                                <div class="flex-1">
-                                    <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                            <!-- Business Content - Right side on mobile, below image on desktop -->
+                            <div class="flex-1 p-3 md:p-6">
+                                <!-- Header -->
+                                <div class="mb-2 md:mb-3">
+                                    <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-0.5 md:mb-1 line-clamp-1">
                                         {{ $businessUser->company_name }}
                                     </h3>
-                                    <p class="text-sm text-gray-600">
-                                        {{ $businessUser->contact_person }}
-                                    </p>
-                                </div>
-                                <div class="flex flex-col items-end space-y-2 ml-4">
-                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                                        {{ ucfirst(str_replace('_', ' ', $businessUser->business_type)) }}
-                                    </span>
-                                    @if($businessUser->total_ratings > 0)
-                                        <div class="flex items-center space-x-1.5">
-                                            <div class="flex items-center space-x-0.5">
-                                                @php
-                                                    $avgRating = $businessUser->average_rating ?? 0;
-                                                @endphp
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <svg class="w-3.5 h-3.5 {{ $avgRating >= $i ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                    </svg>
-                                                @endfor
+                                    <div class="flex items-center gap-2 flex-wrap mb-1 md:mb-0">
+                                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                                            {{ ucfirst(str_replace('_', ' ', $businessUser->business_type)) }}
+                                        </span>
+                                        @if($businessUser->total_ratings > 0)
+                                            <div class="flex items-center space-x-1">
+                                                <div class="flex items-center space-x-0.5">
+                                                    @php
+                                                        $avgRating = $businessUser->average_rating ?? 0;
+                                                    @endphp
+                                                    @for($i = 1; $i <= 5; $i++)
+                                                        <svg class="w-3 h-3 md:w-3.5 md:h-3.5 {{ $avgRating >= $i ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                        </svg>
+                                                    @endfor
+                                                </div>
+                                                <span class="text-xs md:text-sm font-medium text-gray-700">{{ number_format($businessUser->average_rating, 1) }}</span>
                                             </div>
-                                            <span class="text-sm font-medium text-gray-700">{{ number_format($businessUser->average_rating, 1) }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                @if($businessUser->description)
+                                    <p class="text-gray-600 text-xs md:text-sm mb-2 md:mb-4 line-clamp-2 md:line-clamp-3">
+                                        {{ Str::limit($businessUser->description, 80) }}
+                                    </p>
+                                @endif
+
+                                <!-- Business Info - Hidden on mobile, shown on desktop -->
+                                <div class="hidden md:block space-y-2 mb-4">
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        {{ $businessUser->address }}, {{ $businessUser->neighborhood }}
+                                    </div>
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                        {{ $businessUser->phone }}
+                                    </div>
+                                    @if($businessUser->email)
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                            </svg>
+                                            {{ $businessUser->email }}
                                         </div>
                                     @endif
                                 </div>
-                            </div>
 
-                            <!-- Description -->
-                            @if($businessUser->description)
-                                <p class="text-gray-600 text-sm mb-4 line-clamp-3">
-                                    {{ Str::limit($businessUser->description, 120) }}
-                                </p>
-                            @endif
-
-                            <!-- Business Info -->
-                            <div class="space-y-2 mb-4">
-                                <div class="flex items-center text-sm text-gray-500">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    {{ $businessUser->address }}, {{ $businessUser->neighborhood }}
+                                <!-- Stats - Hidden on mobile, shown on desktop -->
+                                <div class="hidden md:flex items-center justify-between text-sm text-gray-500 mb-4">
+                                    <span>{{ $businessUser->created_at->format('d.m.Y') }}</span>
+                                    <span>{{ $businessUser->city }}</span>
                                 </div>
-                                <div class="flex items-center text-sm text-gray-500">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                    </svg>
-                                    {{ $businessUser->phone }}
-                                </div>
-                                @if($businessUser->email)
-                                    <div class="flex items-center text-sm text-gray-500">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                        </svg>
-                                        {{ $businessUser->email }}
-                                    </div>
-                                @endif
-                            </div>
 
-                            <!-- Stats -->
-                            <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-                                <span>{{ $businessUser->created_at->format('d.m.Y') }}</span>
-                                <span>{{ $businessUser->city }}</span>
+                                <!-- Action Button -->
+                                <a href="{{ route('businesses.show', $businessUser) }}" 
+                                   class="block w-full bg-green-600 text-white text-center py-1.5 md:py-2 px-3 md:px-4 rounded-lg text-sm md:text-base font-medium hover:bg-green-700 transition-colors duration-200">
+                                    Pogledaj biznis
+                                </a>
                             </div>
-
-                            <!-- Action Button -->
-                            <a href="{{ route('businesses.show', $businessUser) }}" 
-                               class="block w-full bg-green-600 text-white text-center py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200">
-                                Pogledaj biznis
-                            </a>
                         </div>
                     </div>
                 @endforeach
@@ -232,6 +230,18 @@
 </div>
 
 <style>
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
 .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
