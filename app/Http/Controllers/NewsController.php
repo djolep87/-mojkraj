@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\News;
 use App\Models\NewsComment;
 use App\Models\NewsLike;
+use App\Notifications\NewNewsNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -60,6 +61,16 @@ class NewsController extends Controller
         }
         
         $news->incrementViews();
+        
+        $this->trackActivity('open_post', 'vest_' . $news->id);
+        
+        // Mark notification as read if user came from notification
+        if ($user) {
+            $user->notifications()
+                ->whereNull('read_at')
+                ->where('data->news_id', $news->id)
+                ->update(['read_at' => now()]);
+        }
         
         // Load comments and likes
         $news->load(['comments' => function($query) {
@@ -126,6 +137,17 @@ class NewsController extends Controller
             'city' => $user->city,
             'neighborhood' => $user->neighborhood,
         ]);
+
+        $news->load('user');
+        
+        $users = \App\Models\User::whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
+            ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city])
+            ->where('id', '!=', $user->id)
+            ->get();
+        
+        foreach ($users as $notifyUser) {
+            $notifyUser->notify(new NewNewsNotification($news));
+        }
 
         return redirect()->route('news.show', $news)->with('success', 'Vest je uspešno kreirana!');
     }

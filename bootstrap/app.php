@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.user.auth' => \App\Http\Middleware\CheckUserAuth::class,
         ]);
+    })
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('notifications:send-smart')->daily();
+        $schedule->command('activity:cleanup')->weekly();
+        $schedule->command('notifications:cleanup-read')->hourly();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

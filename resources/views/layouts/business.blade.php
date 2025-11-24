@@ -176,24 +176,44 @@
                 
                 <!-- Business User Section -->
                 <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
-                            {{ substr($currentBusinessUser->company_name, 0, 1) }}
-                        </div>
-                        <div class="hidden md:block">
-                            <p class="text-sm font-medium text-gray-900">{{ $currentBusinessUser->company_name }}</p>
-                            <p class="text-xs text-gray-500">{{ $currentBusinessUser->city }}</p>
+                    <!-- Business User Dropdown -->
+                    <div class="relative group hidden md:block">
+                        <button class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                            <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                {{ substr($currentBusinessUser->company_name, 0, 1) }}
+                            </div>
+                            <div class="hidden lg:block text-left">
+                                <p class="text-sm font-medium text-gray-900">{{ $currentBusinessUser->company_name }}</p>
+                                <p class="text-xs text-gray-500">{{ $currentBusinessUser->city }}</p>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div class="py-2">
+                                <div class="px-4 py-3 border-b border-gray-100">
+                                    <p class="text-sm font-semibold text-gray-900">{{ $currentBusinessUser->company_name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $currentBusinessUser->city }}</p>
+                                </div>
+                                <a href="{{ route('business.dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-200">
+                                    <svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                    </svg>
+                                    <span class="font-medium">Dashboard</span>
+                                </a>
+                                <form method="POST" action="{{ route('business.logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200">
+                                        <svg class="w-5 h-5 mr-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                        </svg>
+                                        <span class="font-medium">Odjavi se</span>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                    <a href="{{ route('business.dashboard') }}" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-2 rounded-full font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl">
-                        Dashboard
-                    </a>
-                    <form method="POST" action="{{ route('business.logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg font-medium hover:bg-gray-100 transition-all duration-200">
-                            Odjavi se
-                        </button>
-                    </form>
                     
                     <!-- Mobile menu button -->
                     <button id="mobile-menu-button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
@@ -390,25 +410,39 @@
                         </div>
                     @elseif($isBusinessUser)
                         <div class="space-y-3">
-                            <div class="flex items-center space-x-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl px-4 py-4 border border-green-100">
-                                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
-                                    <span class="text-white text-lg font-bold">{{ substr($currentBusinessUser->company_name, 0, 1) }}</span>
+                            <!-- Business User Dropdown Mobile -->
+                            <div class="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
+                                <button id="mobile-business-menu-button" class="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                                            <span class="text-white text-lg font-bold">{{ substr($currentBusinessUser->company_name, 0, 1) }}</span>
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="text-gray-800 font-semibold text-base">{{ $currentBusinessUser->company_name }}</p>
+                                            <p class="text-gray-500 text-sm">{{ $currentBusinessUser->city }}</p>
+                                        </div>
+                                    </div>
+                                    <svg id="mobile-business-menu-arrow" class="w-5 h-5 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <div id="mobile-business-menu" class="hidden border-t border-gray-200">
+                                    <a href="{{ route('business.dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-200">
+                                        <svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                        </svg>
+                                        <span class="font-medium">Dashboard</span>
+                                    </a>
+                                    <form method="POST" action="{{ route('business.logout') }}">
+                                        @csrf
+                                        <button type="submit" class="w-full flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200">
+                                            <svg class="w-5 h-5 mr-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                            <span class="font-medium">Odjavi se</span>
+                                        </button>
+                                    </form>
                                 </div>
-                                <div class="flex flex-col flex-1">
-                                    <span class="text-gray-800 font-semibold text-base">{{ $currentBusinessUser->company_name }}</span>
-                                    <span class="text-gray-500 text-sm">{{ $currentBusinessUser->city }}</span>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <a href="{{ route('business.dashboard') }}" class="px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold text-center hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                                    Dashboard
-                                </a>
-                                <form method="POST" action="{{ route('business.logout') }}" class="w-full">
-                                    @csrf
-                                    <button type="submit" class="w-full px-4 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl font-semibold transition-all duration-200 border border-gray-200 hover:border-red-200">
-                                        Odjavi se
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     @else
@@ -452,6 +486,18 @@
                     mobileMenu.classList.add('hidden');
                 }
             });
+            
+            // Mobile business user menu dropdown
+            const mobileBusinessMenuButton = document.getElementById('mobile-business-menu-button');
+            const mobileBusinessMenu = document.getElementById('mobile-business-menu');
+            const mobileBusinessMenuArrow = document.getElementById('mobile-business-menu-arrow');
+            
+            if (mobileBusinessMenuButton && mobileBusinessMenu) {
+                mobileBusinessMenuButton.addEventListener('click', function() {
+                    mobileBusinessMenu.classList.toggle('hidden');
+                    mobileBusinessMenuArrow.classList.toggle('rotate-180');
+                });
+            }
         });
     </script>
 

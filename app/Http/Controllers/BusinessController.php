@@ -40,6 +40,10 @@ class BusinessController extends Controller
             ->where('city', $city)
             ->where('is_active', true);
         
+        if ($user) {
+            $this->trackActivity('click', 'biznisi');
+        }
+        
         // Apply search filter
         if ($request->filled('search')) {
             $search = $request->search;

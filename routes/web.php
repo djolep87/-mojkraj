@@ -16,6 +16,7 @@ use App\Http\Controllers\VoteController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AnnouncementCommentController;
 use App\Http\Controllers\BusinessRatingController;
+use App\Http\Controllers\NotificationController;
 
 // Home route
 Route::get('/', function () {
@@ -153,6 +154,14 @@ Route::middleware('check.user.auth')->group(function () {
     Route::post('/biznisi/{businessUser}/recenzije', [BusinessRatingController::class, 'store'])->name('businesses.ratings.store');
     Route::post('/biznisi/recenzije/{businessRating}/korisno', [BusinessRatingController::class, 'helpful'])->name('businesses.ratings.helpful');
     Route::post('/biznisi/recenzije/{businessRating}/odgovor', [BusinessRatingController::class, 'ownerReply'])->name('businesses.ratings.reply');
+});
+
+// Notifications routes
+Route::middleware('auth:web')->group(function () {
+    Route::get('/notifikacije', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifikacije/{id}/procitano', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifikacije/sve-procitano', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::delete('/notifikacije/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 });
 
 // News routes (all protected)

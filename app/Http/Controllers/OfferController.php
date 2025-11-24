@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Offer;
+use App\Notifications\NewOfferNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -105,7 +106,11 @@ class OfferController extends Controller
         }
         
         $offers = $query->paginate(24)->withQueryString();
-        
+
+        if ($user) {
+            $this->trackActivity('view_page', 'oglasi');
+        }
+
         // Get liked offers for current user
         $likedOfferIds = collect();
         if ($user) {
@@ -165,6 +170,16 @@ class OfferController extends Controller
         }
         
         $offer->incrementViews();
+        
+        if ($user) {
+            $this->trackActivity('open_post', 'oglas_' . $offer->id);
+            
+            // Mark notification as read if user came from notification
+            $user->notifications()
+                ->whereNull('read_at')
+                ->where('data->offer_id', $offer->id)
+                ->update(['read_at' => now()]);
+        }
         
         // Check if current user has liked this offer
         $isLiked = false;
@@ -231,6 +246,16 @@ class OfferController extends Controller
             'category' => $request->category,
             'images' => $images,
         ]);
+
+        $offer->load('businessUser');
+        
+        $users = \App\Models\User::whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$businessUser->neighborhood])
+            ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$businessUser->city])
+            ->get();
+        
+        foreach ($users as $user) {
+            $user->notify(new NewOfferNotification($offer));
+        }
 
         return redirect()->route('business.dashboard')->with('success', 'Ponuda je uspešno kreirana!');
     }

@@ -175,24 +175,55 @@
                 
                 <!-- User Section -->
                 <div class="flex items-center space-x-4">
-                    <div class="hidden md:flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                            {{ substr($currentUser->name, 0, 1) }}
-                        </div>
-                        <div class="hidden lg:block">
-                            <p class="text-sm font-medium text-gray-900">{{ $currentUser->name }}</p>
-                            <p class="text-xs text-gray-500">{{ $currentUser->neighborhood }}, {{ $currentUser->city }}</p>
+                    <a href="{{ route('notifications.index') }}" class="relative hidden md:block p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        @if($currentUser->unreadNotifications->count() > 0)
+                            <span class="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                                {{ $currentUser->unreadNotifications->count() > 9 ? '9+' : $currentUser->unreadNotifications->count() }}
+                            </span>
+                        @endif
+                    </a>
+                    
+                    <!-- User Dropdown -->
+                    <div class="relative group hidden md:block">
+                        <button class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                {{ substr($currentUser->name, 0, 1) }}
+                            </div>
+                            <div class="hidden lg:block text-left">
+                                <p class="text-sm font-medium text-gray-900">{{ $currentUser->name }}</p>
+                                <p class="text-xs text-gray-500">{{ $currentUser->neighborhood }}, {{ $currentUser->city }}</p>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div class="py-2">
+                                <div class="px-4 py-3 border-b border-gray-100">
+                                    <p class="text-sm font-semibold text-gray-900">{{ $currentUser->name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $currentUser->neighborhood }}, {{ $currentUser->city }}</p>
+                                </div>
+                                <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
+                                    <svg class="w-5 h-5 mr-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                    </svg>
+                                    <span class="font-medium">Dashboard</span>
+                                </a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200">
+                                        <svg class="w-5 h-5 mr-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                        </svg>
+                                        <span class="font-medium">Odjavi se</span>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                    <a href="{{ route('dashboard') }}" class="hidden md:block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl">
-                        Dashboard
-                    </a>
-                    <form method="POST" action="{{ route('logout') }}" class="hidden md:inline">
-                        @csrf
-                        <button type="submit" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg font-medium hover:bg-gray-100 transition-all duration-200">
-                            Odjavi se
-                        </button>
-                    </form>
                     
                     <!-- Mobile menu button -->
                     <button id="mobile-menu-button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
@@ -364,25 +395,55 @@
                 <div class="border-t border-gray-200 pt-6 mt-6">
                     @if($isRegularUser)
                         <div class="space-y-3">
-                            <div class="flex items-center space-x-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl px-4 py-4 border border-blue-100">
-                                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                                    <span class="text-white text-lg font-bold">{{ substr($currentUser->name, 0, 1) }}</span>
+                            <a href="{{ route('notifications.index') }}" class="flex items-center justify-between px-4 py-3 bg-white border-2 border-blue-200 rounded-xl hover:bg-blue-50 transition-all duration-200">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold text-gray-800">Notifikacije</span>
                                 </div>
-                                <div class="flex flex-col flex-1">
-                                    <span class="text-gray-800 font-semibold text-base">{{ $currentUser->name }}</span>
-                                    <span class="text-gray-500 text-sm">{{ $currentUser->neighborhood }}, {{ $currentUser->city }}</span>
+                                @if($currentUser->unreadNotifications->count() > 0)
+                                    <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                                        {{ $currentUser->unreadNotifications->count() > 9 ? '9+' : $currentUser->unreadNotifications->count() }}
+                                    </span>
+                                @endif
+                            </a>
+                            
+                            <!-- User Dropdown Mobile -->
+                            <div class="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
+                                <button id="mobile-user-menu-button" class="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                                            <span class="text-white text-lg font-bold">{{ substr($currentUser->name, 0, 1) }}</span>
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="text-gray-800 font-semibold text-base">{{ $currentUser->name }}</p>
+                                            <p class="text-gray-500 text-sm">{{ $currentUser->neighborhood }}, {{ $currentUser->city }}</p>
+                                        </div>
+                                    </div>
+                                    <svg id="mobile-user-menu-arrow" class="w-5 h-5 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                <div id="mobile-user-menu" class="hidden border-t border-gray-200">
+                                    <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
+                                        <svg class="w-5 h-5 mr-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                        </svg>
+                                        <span class="font-medium">Dashboard</span>
+                                    </a>
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit" class="w-full flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200">
+                                            <svg class="w-5 h-5 mr-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                            <span class="font-medium">Odjavi se</span>
+                                        </button>
+                                    </form>
                                 </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <a href="{{ route('dashboard') }}" class="px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-center hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                                    Dashboard
-                                </a>
-                                <form method="POST" action="{{ route('logout') }}" class="w-full">
-                                    @csrf
-                                    <button type="submit" class="w-full px-4 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl font-semibold transition-all duration-200 border border-gray-200 hover:border-red-200">
-                                        Odjavi se
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     @elseif($isBusinessUser)
@@ -449,6 +510,18 @@
                     mobileMenu.classList.add('hidden');
                 }
             });
+            
+            // Mobile user menu dropdown
+            const mobileUserMenuButton = document.getElementById('mobile-user-menu-button');
+            const mobileUserMenu = document.getElementById('mobile-user-menu');
+            const mobileUserMenuArrow = document.getElementById('mobile-user-menu-arrow');
+            
+            if (mobileUserMenuButton && mobileUserMenu) {
+                mobileUserMenuButton.addEventListener('click', function() {
+                    mobileUserMenu.classList.toggle('hidden');
+                    mobileUserMenuArrow.classList.toggle('rotate-180');
+                });
+            }
         });
     </script>
 
