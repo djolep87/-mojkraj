@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -20,26 +21,28 @@ use App\Http\Controllers\NotificationController;
 
 // Home route
 Route::get('/', function () {
-    // Get latest 6 news posts for preview
-    $query = \App\Models\News::with(['user'])
-        ->published()
-        ->latest();
+    $cacheKey = auth()->check() 
+        ? 'home_news_' . auth()->id() 
+        : 'home_news_guest';
     
-    // If user is logged in, filter by their location
-    if (auth()->check()) {
-        $user = auth()->user();
-        $query->where(function($q) use ($user) {
-            // Show user's own news
-            $q->where('user_id', $user->id)
-              // OR show news from same neighborhood and city
-              ->orWhereHas('user', function($subQ) use ($user) {
-                  $subQ->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
-                       ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
-              });
-        });
-    }
-    
-    $latestNews = $query->limit(6)->get();
+    $latestNews = Cache::remember($cacheKey, 300, function () {
+        $query = \App\Models\News::with(['user'])
+            ->published()
+            ->latest();
+        
+        if (auth()->check()) {
+            $user = auth()->user();
+            $query->where(function($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere(function($subQ) use ($user) {
+                      $subQ->where('city', $user->city)
+                           ->where('neighborhood', $user->neighborhood);
+                  });
+            });
+        }
+        
+        return $query->limit(6)->get();
+    });
     
     return view('welcome', compact('latestNews'));
 })->name('home');
@@ -51,17 +54,20 @@ Route::get('/biznis-info', function () {
 
 // News info page
 Route::get('/vesti-info', function () {
-    // Get latest news only if user is logged in
     $latestNews = collect();
     
     if (auth()->check()) {
         $user = auth()->user();
-        $latestNews = \App\Models\News::with('user')
-            ->where('city', $user->city)
-            ->where('neighborhood', $user->neighborhood)
-            ->orderBy('created_at', 'desc')
-            ->limit(6)
-            ->get();
+        $cacheKey = 'news_info_' . $user->id;
+        
+        $latestNews = Cache::remember($cacheKey, 300, function () use ($user) {
+            return \App\Models\News::with('user')
+                ->where('city', $user->city)
+                ->where('neighborhood', $user->neighborhood)
+                ->orderBy('created_at', 'desc')
+                ->limit(6)
+                ->get();
+        });
     }
     
     return view('news-info', compact('latestNews'));
@@ -168,7 +174,7 @@ Route::middleware('auth:web')->group(function () {
 Route::middleware('auth:web')->group(function () {
     Route::get('/vesti', [NewsController::class, 'index'])->name('news.index');
     Route::get('/vesti/create', [NewsController::class, 'create'])->name('news.create');
-    Route::post('/vesti', [NewsController::class, 'store'])->name('news.store');
+    Route::post('/vesti', [NewsController::class, 'store'])->middleware('throttle:10,60')->name('news.store');
     Route::get('/vesti/{news}', [NewsController::class, 'show'])->name('news.show');
     Route::get('/vesti/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
     Route::put('/vesti/{news}', [NewsController::class, 'update'])->name('news.update');
@@ -202,7 +208,7 @@ Route::middleware('auth:business')->group(function () {
     
     // Offers routes for business users (CRUD operations)
     Route::get('/business/ponude/create', [OfferController::class, 'create'])->name('offers.create');
-    Route::post('/business/ponude', [OfferController::class, 'store'])->name('offers.store');
+    Route::post('/business/ponude', [OfferController::class, 'store'])->middleware('throttle:10,60')->name('offers.store');
     Route::get('/business/ponude/{offer}/edit', [OfferController::class, 'edit'])->name('offers.edit');
     Route::put('/business/ponude/{offer}', [OfferController::class, 'update'])->name('offers.update');
     Route::delete('/business/ponude/{offer}', [OfferController::class, 'destroy'])->name('offers.destroy');

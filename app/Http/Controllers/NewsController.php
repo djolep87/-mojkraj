@@ -8,6 +8,9 @@ use App\Models\NewsLike;
 use App\Notifications\NewNewsNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -24,14 +27,12 @@ class NewsController extends Controller
         $user = Auth::user();
         $query = News::with('user')->published();
         
-        // Filter by user location
+        // Filter by user location - optimized without whereHas
         $query->where(function($q) use ($user) {
-            // Show user's own news
             $q->where('user_id', $user->id)
-              // OR show news from same neighborhood and city
-              ->orWhereHas('user', function($subQ) use ($user) {
-                  $subQ->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
-                       ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
+              ->orWhere(function($subQ) use ($user) {
+                  $subQ->where('city', $user->city)
+                       ->where('neighborhood', $user->neighborhood);
               });
         });
         
@@ -72,10 +73,10 @@ class NewsController extends Controller
                 ->update(['read_at' => now()]);
         }
         
-        // Load comments and likes
+        // Load comments and likes - optimized with limit
         $news->load(['comments' => function($query) {
-            $query->orderBy('created_at', 'desc');
-        }, 'comments.user', 'comments.replies.user', 'likes']);
+            $query->orderBy('created_at', 'desc')->limit(50);
+        }, 'comments.user:id,name', 'comments.replies.user:id,name', 'likes']);
         
         // Check if current user liked this news
         $isLiked = false;
@@ -125,29 +126,36 @@ class NewsController extends Controller
             }
         }
 
-        $news = $user->news()->create([
-            'title' => $request->title,
-            'content' => $request->content,
-            'summary' => $request->summary,
-            'category' => $request->category,
-            'images' => $images,
-            'videos' => $videos,
-            'is_published' => true,
-            'is_anonymous' => $request->boolean('is_anonymous'),
-            'city' => $user->city,
-            'neighborhood' => $user->neighborhood,
-        ]);
+        $news = DB::transaction(function() use ($request, $user, $images, $videos) {
+            $news = $user->news()->create([
+                'title' => $request->title,
+                'content' => $request->content,
+                'summary' => $request->summary,
+                'category' => $request->category,
+                'images' => $images,
+                'videos' => $videos,
+                'is_published' => true,
+                'is_anonymous' => $request->boolean('is_anonymous'),
+                'city' => $user->city,
+                'neighborhood' => $user->neighborhood,
+            ]);
 
-        $news->load('user');
+            $news->load('user');
+            return $news;
+        });
         
         $users = \App\Models\User::whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
             ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city])
             ->where('id', '!=', $user->id)
             ->get();
         
-        foreach ($users as $notifyUser) {
-            $notifyUser->notify(new NewNewsNotification($news));
+        if ($users->isNotEmpty()) {
+            Notification::send($users, new NewNewsNotification($news));
         }
+
+        // Clear cache for home and news info pages
+        Cache::forget('home_news_' . $user->id);
+        Cache::forget('news_info_' . $user->id);
 
         return redirect()->route('news.show', $news)->with('success', 'Vest je uspešno kreirana!');
     }

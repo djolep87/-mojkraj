@@ -23,8 +23,8 @@ class PetPostController extends Controller
         // Filter by user's neighborhood/city - only show posts from same area
         if ($user) {
             $query->whereHas('user', function($q) use ($user) {
-                $q->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
-                  ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
+                $q->where('neighborhood', $user->neighborhood)
+                  ->where('city', $user->city);
             });
         }
 

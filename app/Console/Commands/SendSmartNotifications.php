@@ -15,17 +15,18 @@ class SendSmartNotifications extends Command
 
     public function handle(SmartNotificationService $service): int
     {
-        $users = User::all();
         $sent = 0;
 
-        foreach ($users as $user) {
-            $interests = $service->getUserInterests($user);
+        User::chunk(100, function ($users) use ($service, &$sent) {
+            foreach ($users as $user) {
+                $interests = $service->getUserInterests($user);
 
-            if (count($interests) >= 3) {
-                $user->notify(new RelevantContentNotification($interests));
-                $sent++;
+                if (count($interests) >= 3) {
+                    $user->notify(new RelevantContentNotification($interests));
+                    $sent++;
+                }
             }
-        }
+        });
 
         $this->info("Sent {$sent} smart notifications.");
 

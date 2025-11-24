@@ -6,6 +6,9 @@ use App\Models\Offer;
 use App\Notifications\NewOfferNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -40,8 +43,9 @@ class OfferController extends Controller
         // Start with base query - show offers from same neighborhood and city
         $query = Offer::with('businessUser')
             ->whereHas('businessUser', function($q) use ($neighborhood, $city) {
-                $q->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$neighborhood])
-                  ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$city]);
+                $q->where('neighborhood', $neighborhood)
+                  ->where('city', $city)
+                  ->where('is_active', true);
             })
             ->active()
             ->valid();
@@ -231,31 +235,37 @@ class OfferController extends Controller
             }
         }
 
-        $offer = Offer::create([
-            'business_user_id' => $businessUser->id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'offer_type' => $request->offer_type,
-            'original_price' => $request->original_price,
-            'discount_price' => $request->discount_price,
-            'discount_percentage' => $request->discount_percentage,
-            'valid_from' => $request->valid_from,
-            'valid_until' => $request->valid_until,
-            'valid_time_from' => $request->valid_time_from,
-            'valid_time_until' => $request->valid_time_until,
-            'category' => $request->category,
-            'images' => $images,
-        ]);
+        $offer = DB::transaction(function() use ($request, $businessUser, $images) {
+            $offer = Offer::create([
+                'business_user_id' => $businessUser->id,
+                'title' => $request->title,
+                'description' => $request->description,
+                'offer_type' => $request->offer_type,
+                'original_price' => $request->original_price,
+                'discount_price' => $request->discount_price,
+                'discount_percentage' => $request->discount_percentage,
+                'valid_from' => $request->valid_from,
+                'valid_until' => $request->valid_until,
+                'valid_time_from' => $request->valid_time_from,
+                'valid_time_until' => $request->valid_time_until,
+                'category' => $request->category,
+                'images' => $images,
+            ]);
 
-        $offer->load('businessUser');
+            $offer->load('businessUser');
+            return $offer;
+        });
         
         $users = \App\Models\User::whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$businessUser->neighborhood])
             ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$businessUser->city])
             ->get();
         
-        foreach ($users as $user) {
-            $user->notify(new NewOfferNotification($offer));
+        if ($users->isNotEmpty()) {
+            Notification::send($users, new NewOfferNotification($offer));
         }
+
+        // Clear cache for offers listing (if cached)
+        Cache::tags(['offers'])->flush();
 
         return redirect()->route('business.dashboard')->with('success', 'Ponuda je uspešno kreirana!');
     }
