@@ -7,6 +7,7 @@ use App\Models\PetComment;
 use App\Models\PetLike;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -104,7 +105,12 @@ class PetPostController extends Controller
             $data['videos'] = $videos;
         }
 
-        PetPost::create($data);
+        $pet = PetPost::create($data);
+
+        // Clear cache for pets info page
+        if (Auth::check()) {
+            Cache::forget('pets_info_' . Auth::id());
+        }
 
         return redirect()->route('pets.dashboard')->with('success', 'Post je uspešno kreiran!');
     }
@@ -119,7 +125,8 @@ class PetPostController extends Controller
             abort(403, 'Nemate pristup ovom postu. Možete videti samo postove iz vašeg dela grada.');
         }
         
-        $pet->incrementViews();
+        // Increment views in background
+        \App\Jobs\IncrementViewsJob::dispatch('pet', $pet->id);
         
         $pet->load(['user', 'comments' => function($query) {
             $query->orderBy('created_at', 'desc');

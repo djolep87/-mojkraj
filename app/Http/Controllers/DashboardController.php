@@ -11,10 +11,16 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $news = $user->news()->orderBy('created_at', 'desc')->paginate(24);
         
-        // Show only user's own pets posts
+        // Eager load relations for better performance
+        $news = $user->news()
+            ->with('user:id,name')
+            ->orderBy('created_at', 'desc')
+            ->paginate(24);
+        
+        // Show only user's own pets posts with eager loading
         $pets = PetPost::where('user_id', $user->id)
+            ->with('user:id,name')
             ->orderBy('created_at', 'desc')
             ->paginate(24);
         

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\IncrementViewsJob;
 use App\Models\Offer;
 use App\Notifications\NewOfferNotification;
 use Illuminate\Http\Request;
@@ -109,27 +110,39 @@ class OfferController extends Controller
                 break;
         }
         
-        $offers = $query->paginate(24)->withQueryString();
+        // Cache offers listing (only if no filters applied for better cache hit rate)
+        $cacheKey = 'offers_list_' . md5($request->fullUrl());
+        $offers = Cache::remember($cacheKey, 180, function () use ($query) {
+            return $query->paginate(24)->withQueryString();
+        });
 
         if ($user) {
             $this->trackActivity('view_page', 'oglasi');
         }
 
-        // Get liked offers for current user
+        // Get liked offers for current user - optimized: save offer IDs once
         $likedOfferIds = collect();
-        if ($user) {
-            $likedOfferIds = \App\Models\OfferLike::where('user_id', $user->id)
-                ->whereIn('offer_id', $offers->pluck('id'))
-                ->pluck('offer_id');
-        } elseif ($businessUser) {
-            $likedOfferIds = \App\Models\OfferLike::where('business_user_id', $businessUser->id)
-                ->whereIn('offer_id', $offers->pluck('id'))
-                ->pluck('offer_id');
+        if ($offers->isNotEmpty()) {
+            $offerIds = $offers->pluck('id');
+            if ($user) {
+                $likedOfferIds = \App\Models\OfferLike::where('user_id', $user->id)
+                    ->whereIn('offer_id', $offerIds)
+                    ->pluck('offer_id');
+            } elseif ($businessUser) {
+                $likedOfferIds = \App\Models\OfferLike::where('business_user_id', $businessUser->id)
+                    ->whereIn('offer_id', $offerIds)
+                    ->pluck('offer_id');
+            }
         }
         
-        // Get filter options
-        $types = Offer::distinct()->pluck('offer_type')->filter();
-        $priceRange = Offer::selectRaw('MIN(original_price) as min_price, MAX(original_price) as max_price')->first();
+        // Get filter options - cached
+        $types = Cache::remember('offer_types', 3600, function () {
+            return Offer::distinct()->pluck('offer_type')->filter();
+        });
+        
+        $priceRange = Cache::remember('offer_price_range', 3600, function () {
+            return Offer::selectRaw('MIN(original_price) as min_price, MAX(original_price) as max_price')->first();
+        });
         
         // Get business user info if filtering by specific business
         $businessUser = null;
@@ -173,7 +186,8 @@ class OfferController extends Controller
             abort(403, 'Nemate dozvolu da vidite ovu ponudu. Ponuda je iz drugog dela grada.');
         }
         
-        $offer->incrementViews();
+        // Increment views in background
+        IncrementViewsJob::dispatch('offer', $offer->id);
         
         if ($user) {
             $this->trackActivity('open_post', 'oglas_' . $offer->id);
@@ -264,8 +278,10 @@ class OfferController extends Controller
             Notification::send($users, new NewOfferNotification($offer));
         }
 
-        // Clear cache for offers listing (if cached)
-        Cache::tags(['offers'])->flush();
+        // Clear cache for offers listing and filter options
+        Cache::forget('offer_types');
+        Cache::forget('offer_price_range');
+        // Note: Offers listing cache will expire naturally (180s TTL)
 
         return redirect()->route('business.dashboard')->with('success', 'Ponuda je uspešno kreirana!');
     }

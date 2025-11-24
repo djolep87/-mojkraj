@@ -97,15 +97,19 @@ Route::get('/kucni-ljubimci', function () {
     // Only show latest pets if user is logged in and from same area
     if (auth()->check()) {
         $user = auth()->user();
-        $latestPets = \App\Models\PetPost::with(['user'])
-            ->active()
-            ->whereHas('user', function($q) use ($user) {
-                $q->whereRaw('neighborhood COLLATE utf8mb4_unicode_ci = ?', [$user->neighborhood])
-                  ->whereRaw('city COLLATE utf8mb4_unicode_ci = ?', [$user->city]);
-            })
-            ->latest()
-            ->limit(6)
-            ->get();
+        $cacheKey = 'pets_info_' . $user->id;
+        
+        $latestPets = Cache::remember($cacheKey, 300, function () use ($user) {
+            return \App\Models\PetPost::with(['user'])
+                ->active()
+                ->whereHas('user', function($q) use ($user) {
+                    $q->where('neighborhood', $user->neighborhood)
+                      ->where('city', $user->city);
+                })
+                ->latest()
+                ->limit(6)
+                ->get();
+        });
     }
     
     return view('pets-info', compact('latestPets'));

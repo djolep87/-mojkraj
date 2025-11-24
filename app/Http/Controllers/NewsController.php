@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\IncrementViewsJob;
 use App\Models\News;
 use App\Models\NewsComment;
 use App\Models\NewsLike;
@@ -61,7 +62,8 @@ class NewsController extends Controller
             }
         }
         
-        $news->incrementViews();
+        // Increment views in background
+        IncrementViewsJob::dispatch('news', $news->id);
         
         $this->trackActivity('open_post', 'vest_' . $news->id);
         

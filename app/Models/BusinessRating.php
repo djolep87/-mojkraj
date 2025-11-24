@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class BusinessRating extends Model
 {
@@ -50,16 +51,27 @@ class BusinessRating extends Model
     // Scope za dohvatanje prosečne ocene
     public static function getAverageRating($businessUserId)
     {
-        $average = self::where('business_user_id', $businessUserId)
-            ->avg('rating');
-        return $average ? (float) $average : 0.0;
+        return Cache::remember("business_rating_avg_{$businessUserId}", 3600, function () use ($businessUserId) {
+            $average = self::where('business_user_id', $businessUserId)
+                ->avg('rating');
+            return $average ? (float) $average : 0.0;
+        });
     }
 
     // Scope za dohvatanje ukupnog broja ocena
     public static function getTotalRatings($businessUserId)
     {
-        return self::where('business_user_id', $businessUserId)
-            ->count();
+        return Cache::remember("business_rating_total_{$businessUserId}", 3600, function () use ($businessUserId) {
+            return self::where('business_user_id', $businessUserId)
+                ->count();
+        });
+    }
+
+    // Clear cache when rating is created/updated/deleted
+    public static function clearRatingCache($businessUserId)
+    {
+        Cache::forget("business_rating_avg_{$businessUserId}");
+        Cache::forget("business_rating_total_{$businessUserId}");
     }
 
     // Provera da li korisnik već ima ocenu za ovaj biznis

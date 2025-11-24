@@ -66,6 +66,9 @@ class BusinessRatingController extends Controller
                 'emoji' => $request->emoji,
                 'helpful_count' => 0,
             ]);
+
+            // Clear rating cache
+            BusinessRating::clearRatingCache($businessUser->id);
         }
 
         // Get updated average rating and total ratings
