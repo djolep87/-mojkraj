@@ -44,7 +44,17 @@ Route::get('/', function () {
         return $query->limit(6)->get();
     });
     
-    return view('welcome', compact('latestNews'));
+    // Get real counts for community stats
+    $stats = Cache::remember('community_stats', 3600, function () {
+        return [
+            'users_count' => \App\Models\User::count(),
+            'news_count' => \App\Models\News::published()->count(),
+            'businesses_count' => \App\Models\BusinessUser::where('is_active', true)->count(),
+            'pets_count' => \App\Models\PetPost::active()->count(),
+        ];
+    });
+    
+    return view('welcome', compact('latestNews', 'stats'));
 })->name('home');
 
 // Business info page

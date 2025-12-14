@@ -829,9 +829,8 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="text-5xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">2,847</div>
+                    <div class="text-5xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">{{ number_format($stats['users_count']) }}</div>
                     <div class="text-gray-300 text-lg font-medium">Aktivnih korisnika</div>
-                    <div class="text-sm text-gray-400 mt-2">+127 ovaj mesec</div>
                 </div>
 
                 <div class="text-center group">
@@ -847,9 +846,8 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="text-5xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">1,234</div>
+                    <div class="text-5xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">{{ number_format($stats['news_count']) }}</div>
                     <div class="text-gray-300 text-lg font-medium">Objavljenih vesti</div>
-                    <div class="text-sm text-gray-400 mt-2">+89 ovaj mesec</div>
                 </div>
 
                 <div class="text-center group">
@@ -865,9 +863,8 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="text-5xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">456</div>
+                    <div class="text-5xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">{{ number_format($stats['businesses_count']) }}</div>
                     <div class="text-gray-300 text-lg font-medium">Lokalnih biznisa</div>
-                    <div class="text-sm text-gray-400 mt-2">+23 ovaj mesec</div>
                 </div>
 
                 <div class="text-center group">
@@ -883,9 +880,8 @@
                             </svg>
                         </div>
                     </div>
-                    <div class="text-5xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">789</div>
+                    <div class="text-5xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">{{ number_format($stats['pets_count']) }}</div>
                     <div class="text-gray-300 text-lg font-medium">Kućnih ljubimaca</div>
-                    <div class="text-sm text-gray-400 mt-2">+45 ovaj mesec</div>
                 </div>
             </div>
 
